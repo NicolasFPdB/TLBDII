@@ -1,0 +1,171 @@
+<!doctype html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <title>LRC1970</title>
+    <link rel="stylesheet" href="style-forms.css">
+</head>
+
+<body>
+    <form id="forms_cad">
+
+        <div class="container">
+
+            <!-- Labels e Inputs-->
+            <div class="form-input">
+                <label for="cad-name">Nome</label>
+                <input name="name" type="text" id="cad-name" class="input" placeholder="Nome">
+            </div>
+
+            <div class="form-input">
+                <label for="cad-email">Email</label>
+                <input name="e-mail" type="email" id="cad-email" class="input" placeholder="nome@exemplo.com">
+            </div>
+
+            <div class="form-input">
+                <label for="cad-cep">CEP</label>
+                <input name="cep" type="text" id="cad-cep" class="input" placeholder="00000-000">
+            </div>
+
+            <div class="form-input">
+                <label for="cad-pass">Senha</label>
+                <input name="password" type="password" class="input" id="cad-pass" placeholder="Senha">
+            </div>
+
+            <!-- Botões -->
+            <div class="cad-btn-container">
+                <button type="submit" id="cadastroBtn" class="btn">Cadastrar</button>
+                <button type="button" id="already-log" class="btn">Já sou cadastrado</a></button>
+            </div>
+
+        </div>
+
+        <!-- Definição do formulário -->
+        <input type="text" name="code" id="code" style="display:none" value="cadastro">
+
+        <!-- Resposta da requisição -->
+        <div id="resp"></div>
+
+    </form>
+
+    <form id="forms_log">
+        <div class="container">
+
+            <!-- Labels e Inputs-->
+            <div class="form-input">
+                <label for="log-email">Email</label>
+                <input name="e-mail" type="email" class="input" id="log-email" placeholder="nome@exemplo.com">
+            </div>
+
+            <div class="form-input">
+                <label for="log-pass">Senha</label>
+                <input name="password" type="password" class="input" id="log-pass" placeholder="Senha">
+            </div>
+
+            <!-- Botões -->
+            <div class="log-btn-container">
+                <button type="submit" id="loginBtn" class="btn">Logar</button>
+                <button type="button" style="margin: 5px;" id="not-cad">Não sou cadastrado</button><br>
+                <button type="button" id="fgt-password">Esqueci a senha</button>
+            </div>
+
+        </div>
+
+        <!-- Definição do formulário -->
+        <input type="text" name="code" id="code" style="display:none" value="login">
+
+        <!-- Resposta da requisição -->
+        <div id="resp"></div>
+
+    </form>
+
+    <form id="forms_pass">
+
+        <div class="container-pass">
+
+            <!-- Labels e Inputs-->
+            <div class="form-input">
+                <label for="pass-email">Email</label>
+                <input name="e-mail" type="email" class="input" id="pass-email" placeholder="nome@exemplo.com">
+            </div>
+
+            <div class="form-input">
+                <label for="pass-pass">Senha</label>
+                <input name="password" type="password" class="input" id="pass-pass" placeholder="Senha">
+            </div>
+
+            <div class="form-input">
+                <label for="pass-confirm">Confirme sua senha</label>
+                <input name="password" type="password" class="input" id="pass-confirm"
+                    placeholder="Confirm your password">
+            </div>
+
+            <!-- Botões -->
+            <div class="pass-btn-container">
+                <button type="submit" id="password-btn" class="btn">Atualizar senha</button>
+            </div>
+
+        </div>
+
+        <!-- Definição do formulário -->
+        <input type="text" name="code" id="code" style="display:none" value="password">
+
+        <!-- Resposta da requisição -->
+        <div id="resp"></div>
+
+    </form>
+
+</body>
+
+<!-- Jquery -->
+<script src="https://code.jquery.com/jquery-3.6.0.min.js"></script>
+
+<!-- Main Script -->
+<script src="ajax.js"></script>
+
+<!-- Script -->
+<script>
+    // Declaração de variáveis
+    let fgtBtn = document.getElementById("fgt-password");
+    let notCadBtn = document.getElementById("not-cad");
+    let loggedBtn = document.getElementById("already-log");
+    let passwordBtn = document.getElementById("password-btn");
+    let formsLog = document.getElementById("forms_log");
+    let formsCad = document.getElementById("forms_cad");
+    let formsPass = document.getElementById("forms_pass");
+
+    // Funções
+    function fgtPassword() {
+        formsLog.style.display = "none";
+        formsCad.style.display = "none";
+        formsPass.style.display = "block";
+    }
+
+    function alreadyLogged() {
+        formsLog.style.display = "block";
+        formsCad.style.display = "none";
+        formsPass.style.display = "none";
+    }
+
+    function notCad() {
+        formsLog.style.display = "none";
+        formsCad.style.display = "block";
+        formsPass.style.display = "none";
+    }
+
+    function newPassword() {
+        formsLog.style.display = "block";
+        formsCad.style.display = "none";
+        formsPass.style.display = "none";
+    }
+
+    // EventListeners
+    fgtBtn.addEventListener("click", fgtPassword);
+    loggedBtn.addEventListener("click", alreadyLogged);
+    notCadBtn.addEventListener("click", notCad);
+    passwordBtn.addEventListener("click", newPassword);
+</script>
+
+</html>

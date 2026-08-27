@@ -1,0 +1,22 @@
+:root {
+  --primary-color: #fb4516;
+  --primary-hover: #df3e15;
+  --bg-dark: #121212;
+  --bg-light: #f8f9fa;
+  --card-bg: #ffffff;
+  --text-main: #212529;
+  --text-muted: #6c757d;
+  --border-color: #e0e0e0;
+}
+
+* {
+  margin: 0;
+  padding: 0;
+  box-sizing: border-box;
+  font-family: "Segoe UI", Tahoma, Verdana, sans-serif;
+}
+
+#forms_cad,
+#forms_pass {
+  display: none;
+}
