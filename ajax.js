@@ -1,8 +1,7 @@
 // PHP - Processamento dos formulários
 $(document).ready(function () {
-  // Seleciona os três formulários pelo ID
   $("#forms_log, #forms_cad, #forms_pass").on("submit", function (e) {
-    e.preventDefault(); // Impede o envio padrão do formulário
+    e.preventDefault();
 
     let $form = $(this);
     let dados = $form.serialize();

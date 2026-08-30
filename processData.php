@@ -29,10 +29,10 @@ $status = [
 try {
 
     switch ($code) {
+        // CÓDIGO DO FORMULÁRIO DE CADASTRO
         case "cadastro":
-
-        $message['general'] = "Requisição forms cadastro efetuada com sucesso!";
-        $status['general'] = "ok";
+            $message['general'] = "Requisição forms cadastro efetuada com sucesso!";
+            $status['general'] = "ok";
 
             if (!$email) {
                 $message['e-mail'] = "E-mail inválido";
@@ -42,19 +42,19 @@ try {
                 break;
             }
 
-        // SQL - Check do User
-        $Sql = "SELECT id FROM users WHERE email = :email";
-        $st = $pdo->prepare($Sql);
-        $st->execute([
-            ':email' => $email
-        ]);
-        $users = $st->fetchALL(PDO::FETCH_ASSOC);
+            // Select SQL - Check do User
+            $Sql = "SELECT id FROM users WHERE email = :email";
+            $st = $pdo->prepare($Sql);
+            $st->execute([
+                ':email' => $email
+            ]);
+            $users = $st->fetchALL(PDO::FETCH_ASSOC);
 
-        // Condicional - Check do User
-        if (!$users) {
+            // Condicional - Check da existência do User
+            if (!$users) {
 
                 // Sanitização de dados - Nome do User
-                if (is_string($name)) {
+                if (is_string($name) && !empty($name)) {
                     $aux = array_values(array_filter(explode(" ", $name)));
                     $name = (count($aux) > 1) ? $aux[0] . " " . end($aux) : $aux[0];
                     $message['name'] = "Nome cadastrado com sucesso!";
@@ -64,7 +64,7 @@ try {
                     $status['name'] = "error";
                 }
 
-                // Sanitização da senha do user
+                // Sanitização de dados - Senha do user
                 if (strlen($password) < 6) {
                     $message['password'] = "Senha deve conter no mínimo 6 caracteres";
                     $status['password'] = "error";
@@ -72,6 +72,8 @@ try {
                     $message['password'] = "Cadastro efetuado com sucesso!";
                     $status['password'] = "ok";
                 }
+
+                // Sanitização de dados - CEP do user
 
                 if ($status['name'] == "ok" && $status['password'] == "ok") {
 
@@ -92,64 +94,69 @@ try {
                     $status['check'] = "error";
                 }
 
-        } else {
-            $message['check'] = "user já cadastrado!";
-            $status['check'] = "error";
-        }
+            } else {
+                $message['check'] = "user já cadastrado!";
+                $status['check'] = "error";
+            }
+            break;
 
-    }
-    break;
+        // CÓDIGO DO FORMULÁRIO DE LOGIN
+        case "login":
 
-    // Código do formulário de Login
-    case "login":
+            $message['general'] = "Requisição forms login efetuada com sucesso!";
+            $status['general'] = "ok";
 
-        $message['general'] = "Requisição forms login efetuada com sucesso!";
-        $status['general'] = "ok";
+            if ($email && !empty($password)) {
+                $message['check'] = "Campos preenchidos com sucesso!";
+                $status['check'] = "ok";
 
-        if ($email && !empty($password)) {
-            $message['check'] = "Campos preenchidos com sucesso!";
-            $status['check'] = "ok";
+                // Select SQL - Check do User
+                $sql = "SELECT id, senha FROM users WHERE email = :email";
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([
+                    ':email' => $email
+                ]);
+                $users = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            // Select SQL
-            $sql = "SELECT id, senha FROM users WHERE email = :email";
+                // Checagem do login
+                if ($users && password_verify($password, $users['senha'])) {
+                    $message['check'] = "Sucesso ao logar!";
+                    $status['check'] = "ok";
+                } else {
+                    $message['check'] = "Login inválido!";
+                    $status['check'] = "error";
+                }
+            } else {
+                $message['check'] = "Campos vazios!";
+                $status['check'] = "error";
+            }
+            break;
+
+        // CÓDIGO DO FORMULÁRIO DE NOVA SENHA/PASSWORD
+        case "password":
+
+            $message['general'] = "Requisição forms nova senha efetuada com sucesso!";
+            $status['general'] = "ok";
+
+            if (!$email) {
+                $message['e-mail'] = "E-mail inválido";
+                $status['e-mail'] = "error";
+                break;
+            }
+
+            // Select SQL - Check do User
+            $sql = "SELECT id FROM users WHERE email = :email";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
                 ':email' => $email
             ]);
             $users = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            // Checagem do login
-            if ($users && password_verify($password, $users['senha'])) {
-                $message['check'] = "Sucesso ao logar!";
+            if ($users) {
+                $message['check'] = "user encontrado com sucesso!";
                 $status['check'] = "ok";
-            } else {
-                $message['check'] = "Login inválido!";
-                $status['check'] = "error";
-            }
-        } else {
-            $message['check'] = "Campos vazios!";
-            $status['check'] = "error";
-        }
-    }
-    // Código do formulário de nova senha/Password
-    else if ($code == "password") {
 
-        $message['general'] = "Requisição forms nova senha efetuada com sucesso!";
-        $status['general'] = "ok";
-
-        // Select SQL
-        $sql = "SELECT id FROM users WHERE email = :email";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            ':email' => $email
-        ]);
-        $users = $stmt->fetch(PDO::FETCH_ASSOC);
-
-        if ($users) {
-            $message['check'] = "user encontrado com sucesso!";
-            $status['check'] = "ok";
-
-                // Sanitização da nova senha do user
+                // Sanitização de dados - Nova senha do User
                 if (strlen($password) < 6) {
                     $message['password'] = "Senha deve conter no mínimo 6 caracteres";
                     $status['password'] = "error";
@@ -164,23 +171,21 @@ try {
                     $message['password'] = "Senha atualizada!";
                     $status['password'] = "ok";
                 }
-
+            } else {
+                $message['check'] = "user não encontrado";
+                $status['check'] = "error";
             }
-        } else {
-            $message['check'] = "user não encontrado";
-            $status['check'] = "error";
-        }
 
-    } else {
-        $message['general'] = "Falha ao encontrar CODE!";
-        $status['general'] = "error";
+        default:
+            $message['general'] = "Falha ao encontrar CODE!";
+            $status['general'] = "error";
     }
 } catch (PDOException $e) {
     $message['general'] = "Falha nas requisições!";
     $status['general'] = "error";
 }
 
-// Dados 
+// Output JSON
 $data = array(
     'name' => $name,
     'e-mail' => $email,

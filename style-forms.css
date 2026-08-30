@@ -1,22 +1,146 @@
 :root {
-  --primary-color: #fb4516;
-  --primary-hover: #df3e15;
-  --bg-dark: #121212;
-  --bg-light: #f8f9fa;
-  --card-bg: #ffffff;
-  --text-main: #212529;
-  --text-muted: #6c757d;
-  --border-color: #e0e0e0;
+	--primary-color: #fb4516;
+	--primary-hover: #df3e15;
+	--bg-dark: #121212;
+	--bg-light: #f8f9fa;
+	--card-bg: #ffffff;
+	--text-main: #212529;
+	--text-muted: #6c757d;
+	--border-color: #e0e0e0;
 }
 
 * {
-  margin: 0;
-  padding: 0;
-  box-sizing: border-box;
-  font-family: "Segoe UI", Tahoma, Verdana, sans-serif;
+	margin: 0;
+	padding: 0;
+	box-sizing: border-box;
+	font-family: "Segoe UI", Tahoma, Verdana, sans-serif;
+}
+
+body {
+	min-height: 100vh;
+	display: flex;
+	justify-content: center;
+	align-items: center;
+	background-image:
+		linear-gradient(rgba(26, 26, 26, 0.7), rgba(26, 26, 26, 0.7)),
+		url("bg_login-cad-fgtpass.jpg");
+	background-size: cover;
+	background-position: center 10%;
+	background-repeat: no-repeat;
 }
 
 #forms_cad,
 #forms_pass {
-  display: none;
+	display: none;
+}
+
+.container {
+	width: 100%;
+	max-width: 450px;
+	padding: 30px;
+	background: rgba(0, 0, 0, 0.35);
+	border: 1px solid rgba(255, 255, 255, 0.15);
+	border-radius: 18px;
+	backdrop-filter: blur(13px);
+	-webkit-backdrop-filter: blur(15px);
+	box-shadow: 0 8px 32px rgba(0, 0, 0, 0.35);
+
+	transform: scale(1.3);
+}
+
+.cad-btn-container,
+.log-btn-container,
+.pass-btn-container {
+	display: flex;
+	flex-direction: column;
+	align-items: center;
+}
+
+.form-input {
+	margin-bottom: 18px;
+}
+
+label {
+	display: block;
+	margin-bottom: 6px;
+	color: whitesmoke;
+	font-size: 14px;
+	font-weight: 600;
+}
+
+.input {
+	width: 100%;
+	padding: 13px 14px;
+	font-size: 15px;
+	box-sizing: border-box;
+	border: 1px solid var(--text-muted);
+	border-radius: 8px;
+	font-size: 15px;
+	outline: none;
+	transition: 0.25s ease;
+}
+
+.input:focus {
+	border-color: var(--primary-color);
+	box-shadow: 0 0 0 3px rgba(251, 69, 22, 0.15);
+}
+
+/* botao principal */
+.btn {
+	width: 100%;
+	padding: 12px;
+	margin-bottom: 5px;
+	background-color: var(--primary-color);
+	color: whitesmoke;
+	border: 2px solid var(--primary-color);
+	border-radius: 8px;
+	font-size: 16px;
+	font-weight: 600;
+	transform: translateY(0);
+	transition: 0.25s;
+	cursor: pointer;
+}
+
+.btn:hover {
+	background-color: var(--primary-hover);
+	border-color: var(--primary-hover);
+	transform: translateY(-2px);
+	box-shadow: inset 0 5px 15px rgba(251, 69, 22, 0.25);
+}
+
+.btn:active {
+	transform: translateY(0);
+	box-shadow: none;
+}
+
+/* botoes secundarios */
+.btn-second {
+	width: 85%;
+	padding: 8px 15px;
+	margin: 10px auto 0;
+	background: rgba(255, 255, 255, 0.08);
+	color: rgba(255, 255, 255, 0.85);
+	border: 1px solid rgba(255, 255, 255, 0.2);
+	border-radius: 8px;
+	font-size: 14px;
+	font-weight: 500;
+	cursor: pointer;
+	transition:
+		background-color 0.2s ease,
+		border-color 0.2s ease,
+		color 0.2s ease,
+		transform 0.2s ease,
+		box-shadow 0.2s ease;
+}
+
+.btn-second:hover {
+	background: rgba(251, 69, 22, 0.15);
+	color: white;
+	border-color: rgba(251, 69, 22, 0.6);
+	transform: translateY(-1px);
+	box-shadow: 0 4px 12px rgba(251, 69, 22, 0.15);
+}
+
+.btn-second:active {
+	transform: translateY(0);
 }
