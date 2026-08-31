@@ -11,11 +11,15 @@
 </head>
 
 <body>
+
+    <!-- logo sera alterada para sua devida versao assim que possivel -->
+    <img src="logo.png" alt="LRC1970" class="logo">
+
     <form id="forms_cad" method="post">
 
         <div class="container">
 
-            <!-- Labels e Inputs-->
+            <!-- Labels e Inputs -->
             <div class="form-input">
                 <label for="cad-name">Nome</label>
                 <input name="name" type="text" id="cad-name" class="input" placeholder="Nome">
@@ -27,11 +31,6 @@
             </div>
 
             <div class="form-input">
-                <label for="cad-cep">CEP</label>
-                <input name="cep" type="text" id="cad-cep" class="input" placeholder="00000-000">
-            </div>
-
-            <div class="form-input">
                 <label for="cad-pass">Senha</label>
                 <input name="password" type="password" class="input" id="cad-pass" placeholder="Senha">
             </div>
@@ -39,7 +38,7 @@
             <!-- Botões -->
             <div class="cad-btn-container">
                 <button type="submit" id="cadastroBtn" class="btn">Cadastrar</button>
-                <button type="button" id="already-log" class="btn-second">Já sou cadastrado</a></button>
+                <button type="button" id="already-log" class="btn-secundario">Já sou cadastrado</button>
             </div>
 
         </div>
@@ -52,7 +51,9 @@
 
     </form>
 
+
     <form id="forms_log" method="post">
+
         <div class="container">
 
             <!-- Labels e Inputs-->
@@ -69,9 +70,8 @@
             <!-- Botões -->
             <div class="log-btn-container">
                 <button type="submit" id="loginBtn" class="btn">Logar</button>
-                <button type="button" style="margin: 5px;" id="not-cad" class="btn-second">Não sou
-                    cadastrado</button><br>
-                <button type="button" id="fgt-password" class="btn-second">Esqueci a senha</button>
+                <button type="button" id="not-cad" class="btn-secundario">Não sou cadastrado</button>
+                <button type="button" id="fgt-password" class="btn-secundario">Esqueci a senha</button>
             </div>
 
         </div>
@@ -84,9 +84,10 @@
 
     </form>
 
+
     <form id="forms_pass" method="post">
 
-        <div class="container-pass">
+        <div class="container">
 
             <!-- Labels e Inputs-->
             <div class="form-input">
@@ -101,8 +102,7 @@
 
             <div class="form-input">
                 <label for="pass-confirm">Confirme sua senha</label>
-                <input name="password" type="password" class="input" id="pass-confirm"
-                    placeholder="Confirm your password">
+                <input name="password" type="password" class="input" id="pass-confirm" placeholder="Confirme sua senha">
             </div>
 
             <!-- Botões -->
