@@ -6,13 +6,13 @@ header('Content-Type: application/json; charset=utf-8');
 
 // Conexão com a Data Base
 include_once('conection.php');
+include_once('mail.php');
 
 // Declaração - variáveis
 $name = trim($_POST['name'] ?? "");
 $emailCheck = $_POST["email"] ?? "";
 $email = filter_var($emailCheck, FILTER_VALIDATE_EMAIL);
 $password = $_POST['password'] ?? "";
-$password_hash = password_hash($password, PASSWORD_DEFAULT);
 $cep = trim($_POST['cep'] ?? "");
 $code = $_POST['code'] ?? "";
 $token = null;
@@ -22,7 +22,7 @@ $message = [
     'general' => "",
     'check' => "",
     'name' => "",
-    'e-mail' => "",
+    'email' => "",
     'password' => "",
     'token' => "",
     'cep' => ""
@@ -31,7 +31,7 @@ $status = [
     'general' => "",
     'check' => "",
     'name' => "",
-    'e-mail' => "",
+    'email' => "",
     'password' => "",
     'token' => "",
     'cep' => ""
@@ -45,8 +45,8 @@ try {
             $status['general'] = "ok";
 
             if (!$email) {
-                $message['e-mail'] = "E-mail inválido";
-                $status['e-mail'] = "error";
+                $message['email'] = "E-mail inválido";
+                $status['email'] = "error";
                 $message['check'] = "Cadastro inválido";
                 $status['check'] = "error";
                 break;
@@ -60,12 +60,11 @@ try {
             ]);
             $user = $st->fetch(PDO::FETCH_ASSOC);
 
-            // Condicional - Check da existência do User
             if (!$user) {
 
                 // Sanitização de dados - Nome do User
-                if (is_string($name) && !empty($name)) {
-                    $aux = array_values(array_filter(explode(" ", $name)));
+                $aux = array_values(array_filter(explode(" ", $name)));
+                if (!empty($aux)) {
                     $name = (count($aux) > 1) ? $aux[0] . " " . end($aux) : $aux[0];
                     $message['name'] = "Nome cadastrado com sucesso!";
                     $status['name'] = "ok";
@@ -79,7 +78,7 @@ try {
                     $message['password'] = "Senha deve conter no mínimo 6 caracteres";
                     $status['password'] = "error";
                 } else {
-                    $message['password'] = "Cadastro efetuado com sucesso!";
+                    $message['password'] = "Senha cadastrada com sucesso!";
                     $status['password'] = "ok";
                 }
 
@@ -92,9 +91,10 @@ try {
                     $status['cep'] = "error";
                 }
 
-                if ($status['name'] == "ok" && $status['password'] == "ok") {
+                if ($status['name'] === "ok" && $status['password'] === "ok" && $status['cep'] === "ok") {
+                    $password_hash = password_hash($password, PASSWORD_DEFAULT);
 
-                    // Insert SQL
+                    // Insert SQL - Cadastro do Usuário na database
                     $sql = "INSERT INTO users (nome, email, senha, cep) VALUES (:nome, :email, :senha, :cep);";
                     $stmt = $pdo->prepare($sql);
                     $stmt->execute([
@@ -104,6 +104,8 @@ try {
                         ':cep' => $cep
                     ]);
 
+                    $message['email'] = "E-mail cadastrado com sucesso!";
+                    $status['email'] = "ok";
                     $message['check'] = "Cadastro efetuado com sucesso!";
                     $status['check'] = "ok";
                 } else {
@@ -112,7 +114,7 @@ try {
                 }
 
             } else {
-                $message['check'] = "user já cadastrado!";
+                $message['check'] = "Usuário já cadastrado!";
                 $status['check'] = "error";
             }
             break;
@@ -161,30 +163,46 @@ try {
             $status['general'] = "ok";
 
             if (!$email) {
-                $message['e-mail'] = "E-mail inválido";
-                $status['e-mail'] = "error";
+                $message['email'] = "E-mail inválido";
+                $status['email'] = "error";
                 break;
             }
 
             // Select SQL - Check do User
-            $sql = "SELECT id FROM users WHERE email = :email";
+            $sql = "SELECT id, token, token_expiration FROM users WHERE email = :email";
             $stmt = $pdo->prepare($sql);
             $stmt->execute([
                 ':email' => $email
             ]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if ($user) {
+            if ($user && !empty($user['token'])) {
                 $message['check'] = "User encontrado com sucesso!";
                 $status['check'] = "ok";
+
+                $userToken = $_POST['token'] ?? "";
+                $now = date('Y-m-d H:i:s');
+
+                if (hash_equals($userToken, $user['token']) && $user['token_expiration'] >= $now) {
+                    $message['token'] = "Token válido";
+                    $status['token'] = "ok";
+                } else {
+                    $message['token'] = "Token inválido";
+                    $status['token'] = "error";
+                    $message['check'] = "Token inválido";
+                    $status['check'] = "error";
+                    break;
+                }
 
                 // Sanitização de dados - Nova senha do User
                 if (strlen($password) < 6) {
                     $message['password'] = "Senha deve conter no mínimo 6 caracteres";
                     $status['password'] = "error";
                 } else {
+                    $password_hash = password_hash($password, PASSWORD_DEFAULT);
+
                     // Update SQL
-                    $Sql = "UPDATE users SET senha = :senha WHERE email = :email;";
+                    $Sql = "UPDATE users SET senha = :senha, token = NULL, token_expiration = NULL WHERE email = :email;";
                     $st = $pdo->prepare($Sql);
                     $st->execute([
                         ':email' => $email,
@@ -194,19 +212,19 @@ try {
                     $status['password'] = "ok";
                 }
             } else {
-                $message['check'] = "user não encontrado";
+                $message['check'] = "User não encontrado";
                 $status['check'] = "error";
             }
             break;
 
-        // CÓDIGO DO FORMULÁRIO DE RESET DE SENHA
-        case "reset-password":
+        // CÓDIGO DO FORMULÁRIO DE ENVIO DO TOKEN
+        case "reset-token":
             $message['general'] = "Requisição de reset da senha efetuada com sucesso!";
             $status['general'] = "ok";
 
             if (!$email) {
-                $message['e-mail'] = "E-mail inválido";
-                $status['e-mail'] = "error";
+                $message['email'] = "E-mail inválido";
+                $status['email'] = "error";
                 break;
             }
 
@@ -219,27 +237,27 @@ try {
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$user) {
-                $message["token"] = "Falha ao encontrar User";
-                $status["token"] = "error";
-            }
-            else {
+                $message["token"] = "Token enviado caso o usuário esteja cadastrado";
+                $status["token"] = "ok";
+            } else {
 
-                $token  = sprintf("%06d", random_int(0, 999999));
+                $token = sprintf("%06d", random_int(0, 999999));
                 $expires = date('Y-m-d H:i:s', strtotime('+30 minutes'));
 
-                $sql = "UPDATE users SET reset_token = :token, token_expiration = :expires WHERE email = :email";
+                $sql = "UPDATE users SET token = :token, token_expiration = :expires WHERE email = :email";
                 $st = $pdo->prepare($sql);
                 $st->execute([
-                    ':token' => implode('', $token),
+                    ':token' => $token,
                     ':expires' => $expires,
                     ':email' => $email
                 ]);
 
-                $message['token'] = "Token gerado com sucesso!";
+                $message['token'] = "Token enviado caso o usuário esteja cadastrado";
                 $status['token'] = "ok";
-                $token = implode('', $token);
+
+                TokenReset($email, $token);
             }
-        break;
+            break;
 
         default:
             $message['general'] = "Falha ao encontrar CODE!";
@@ -254,9 +272,8 @@ try {
 // Output JSON
 $data = array(
     'name' => $name,
-    'e-mail' => $email,
+    'email' => $email,
     'cep' => $cep,
-    'token' => $token,
     'status' => $status,
     'message' => $message
 );
