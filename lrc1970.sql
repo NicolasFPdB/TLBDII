@@ -7,5 +7,7 @@ create table users(
     telefone varchar(15),
     email varchar(100) unique not null,
     cep varchar(9) unique not null,
-    senha varchar(100) not null
+    senha varchar(100) not null,
+    reset_token varchar(20) null,
+    token_expiration datetime null
 );
