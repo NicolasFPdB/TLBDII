@@ -1,17 +1,21 @@
 <!DOCTYPE html>
 <html lang="pt-BR">
+
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title> LRC1970 AutoParts</title>
   <link rel="stylesheet" href="style-landingpage.css">
 </head>
+
 <body>
 
   <!-- Barra superior -->
   <div class="topbar">
     <span>Entregas para todo o Brasil.</span>
-    <span>Acesse também nossa loja na Shopee: <a href="https://shopee.com.br/luizrcunha1970?entryPoint=ShopBySearch&searchKeyword=lrc1970%20autoparts">LRC1970 na Shopee!</a></span>
+    <span>Acesse também nossa loja na Shopee: <a
+        href="https://shopee.com.br/luizrcunha1970?entryPoint=ShopBySearch&searchKeyword=lrc1970%20autoparts">LRC1970 na
+        Shopee!</a></span>
     <span>Atendimento: (11) 99159-9709</span>
   </div>
 
@@ -43,16 +47,37 @@
       <h1>Encontre a peça certa <br>para o seu veículo.</h1>
       <p>Peças originais e paralelas com os melhores preços do mercado.</p>
     </div>
+
+    <!-- carrossel -->
+    <div class="carrossel">
+      <div class="carrossel-track">
+        <a href="#"></a>
+        <a href="#"></a>
+        <a href="#"></a>
+      </div>
+    </div>
   </section>
 
   <!-- Categorias de produtos -->
   <section class="categories">
-    <div class="cat-card">Motor</div>
-    <div class="cat-card">Freios</div>
-    <div class="cat-card">Suspensão</div>
-    <div class="cat-card">Iluminação</div>
-    <div class="cat-card">Elétrica</div>
-    <div class="cat-card">Óleos & Fluidos</div>
+
+    <button class="category-arrow left" onclick="scrollCategories(-1)">‹</button>
+
+    <div class="categories-container" id="categoriesContainer">
+      <button class="cat-card" data-category="all">Todos os produtos</button>
+      <button class="cat-card" data-category="acessorios">Acessórios</button>
+      <button class="cat-card" data-category="alimentacao">Alimentação</button>
+      <button class="cat-card" data-category="cabos-alavancas">Cabos e Alavancas</button>
+      <button class="cat-card" data-category="cambio">Câmbio</button>
+      <button class="cat-card" data-category="embreagem">Embreagem</button>
+      <button class="cat-card" data-category="lanternas">Lanternas</button>
+      <button class="cat-card" data-category="motor">Motor</button>
+      <button class="cat-card" data-category="suspensao">Suspensão</button>
+      <button class="cat-card" data-category="transmissao">Transmissão</button>
+    </div>
+
+    <button class="category-arrow right" onclick="scrollCategories(1)">›</button>
+
   </section>
 
   <!-- Produtos mais vendidos -->
@@ -62,11 +87,11 @@
     <div class="product-grid">
 
       <!-- Produto 1 -->
-      <div class="product-card">
+      <div class="product-card" data-category="cabos-alavancas">
         <div class="product-img">[Imagem do Produto]</div>
         <div class="product-info">
-          <div class="product-title">Kit de Pastilhas de Freio Dianteira VW Gol G5 G6</div>
-          <div class="product-price">R$ 129,90</div>
+          <div class="product-title">Cabo de Engate de Marchas Ducato Boxer e Jumper 2.8/2.3 2007-2017</div>
+          <div class="product-price">R$ 305,00</div>
           <div class="shipping-tag">Frete Grátis</div>
           <button class="btn-buy">Comprar</button>
         </div>
@@ -110,38 +135,40 @@
 
   <!-- Rodapé -->
   <footer>
-        <div class="footer-content">
-            <div class="footer-column">
-                <h4>LRC1970 AutoPeças</h4>
-                <ul>
-                    <li>Informações claras, autenticidade e confiança para o seu veículo.</li>
-                </ul>
-            </div>
+    <div class="footer-content">
+      <div class="footer-column">
+        <h4>LRC1970 AutoPeças</h4>
+        <ul>
+          <li>Informações claras, autenticidade e confiança para o seu veículo.</li>
+        </ul>
+      </div>
 
-            <div class="footer-column">
-                <h4>Formas de Pagamento</h4>
-                <ul>
-                    <li>• Cartão de Crédito</li>
-                    <li>• Cartão de Débito</li>
-                    <li>• Pix</li>
-                </ul>
-            </div>
+      <div class="footer-column">
+        <h4>Formas de Pagamento</h4>
+        <ul>
+          <li>• Cartão de Crédito</li>
+          <li>• Cartão de Débito</li>
+          <li>• Pix</li>
+        </ul>
+      </div>
 
-            <div class="footer-column">
-                <h4>Opções de Entrega</h4>
-                <ul>
-                    <li>• Correios</li>
-                    <li>• Transportadoras</li>
-                    <li>• Entrega Direta</li>
-                    <li>• Motoboy (Uber Envios)</li>
-                </ul>
-            </div>
-        </div>
+      <div class="footer-column">
+        <h4>Opções de Entrega</h4>
+        <ul>
+          <li>• Correios</li>
+          <li>• Transportadoras</li>
+          <li>• Entrega Direta</li>
+          <li>• Motoboy (Uber Envios)</li>
+        </ul>
+      </div>
+    </div>
 
-        <div class="footer-bottom">
-            &copy; 2026 LRC1970 AutoParts - Todos os direitos reservados.
-        </div>
-    </footer>
+    <div class="footer-bottom">
+      &copy; 2026 LRC1970 AutoParts - Todos os direitos reservados.
+    </div>
+  </footer>
 
 </body>
+<script src="landingpage.js"></script>
+
 </html>
