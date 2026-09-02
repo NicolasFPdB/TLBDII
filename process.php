@@ -4,11 +4,25 @@ if (session_status() === PHP_SESSION_NONE) {
 }
 header('Content-Type: application/json; charset=utf-8');
 
-// Conexão com a Data Base
-include_once('conection.php');
-include_once('mail.php');
+// Conexão com a Database
+    include_once('conection.php');
 
-// Declaração - variáveis
+// Conexão com E-mail
+    include_once('mail.php');
+
+    // Conexão com o Redis
+    $redis = null;
+    try {
+        $redisInstance = new Redis();
+        if ($redisInstance->connect('127.0.0.1', 6379)) {
+            $redis = $redisInstance;
+        }
+    } catch (Exception $e) {
+        $message['general'] = "Erro ao conectar ao serviço de cache.";
+        $status['general']  = "error";
+    }
+
+// Declaração - Variáveis
 $name = trim($_POST['name'] ?? "");
 $emailCheck = $_POST["email"] ?? "";
 $email = filter_var($emailCheck, FILTER_VALIDATE_EMAIL);
@@ -16,6 +30,7 @@ $password = $_POST['password'] ?? "";
 $cep = trim($_POST['cep'] ?? "");
 $code = $_POST['code'] ?? "";
 $token = null;
+$userIp = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
 
 // Declaração - objetos
 $message = [
@@ -36,13 +51,41 @@ $status = [
     'token' => "",
     'cep' => ""
 ];
-try {
 
+function RateLimit(?Redis $redis, string $ip, string $action, int $maxAttempts = 5, int $Seconds = 300): bool {
+    if (!$redis) {
+        return true;
+    } 
+    try {
+        $key = "rate_limit:{$action}:{$ip}";
+        $currentAttempts = $redis->get($key);
+        if ($currentAttempts && (int)$currentAttempts >= $maxAttempts) {
+            return false;
+        }
+        $newAttempts = $redis->incr($key);
+        if ($newAttempts === 1) {
+            $redis->expire($key, $Seconds);
+        }
+        return true;
+    }
+    catch (Throwable $e) {
+        return false;
+    }
+}
+
+try {
     switch ($code) {
         // CÓDIGO DO FORMULÁRIO DE CADASTRO
         case "cadastro":
             $message['general'] = "Requisição forms cadastro efetuada com sucesso!";
             $status['general'] = "ok";
+
+            // Proteção - Automatizada de criação de contas
+            if (!RateLimit($redis, $userIp, 'cadastro', 10, 600)) {
+                $message['check'] = "Muitas tentativas de cadastro. Aguarde alguns minutos.";
+                $status['check']  = "error";
+                break;
+            }
 
             if (!$email) {
                 $message['email'] = "E-mail inválido";
@@ -54,14 +97,11 @@ try {
 
             // Select SQL - Check do User
             $Sql = "SELECT id FROM users WHERE email = :email";
-            $st = $pdo->prepare($Sql);
-            $st->execute([
-                ':email' => $email
-            ]);
-            $user = $st->fetch(PDO::FETCH_ASSOC);
+            $stmt = $pdo->prepare($Sql);
+            $stmt->execute([':email' => $email]);
+            $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if (!$user) {
-
                 // Sanitização de dados - Nome do User
                 $aux = array_values(array_filter(explode(" ", $name)));
                 if (!empty($aux)) {
@@ -92,7 +132,7 @@ try {
                 }
 
                 if ($status['name'] === "ok" && $status['password'] === "ok" && $status['cep'] === "ok") {
-                    $password_hash = password_hash($password, PASSWORD_DEFAULT);
+                    $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
                     // Insert SQL - Cadastro do Usuário na database
                     $sql = "INSERT INTO users (nome, email, senha, cep) VALUES (:nome, :email, :senha, :cep);";
@@ -100,7 +140,7 @@ try {
                     $stmt->execute([
                         ':nome' => $name,
                         ':email' => $email,
-                        ':senha' => $password_hash,
+                        ':senha' => $passwordHash,
                         ':cep' => $cep
                     ]);
 
@@ -125,6 +165,13 @@ try {
             $message['general'] = "Requisição forms login efetuada com sucesso!";
             $status['general'] = "ok";
 
+            // Proteção - Brute Force
+            if (!RateLimit($redis, $userIp, 'login', 5, 300)) {
+            $message['check'] = "Muitas tentativas de login. Aguarde 5 minutos e tente novamente.";
+            $status['check']  = "error";
+            break;
+        }
+
             if ($email && !empty($password)) {
                 $message['check'] = "Campos preenchidos com sucesso!";
                 $status['check'] = "ok";
@@ -132,9 +179,7 @@ try {
                 // Select SQL - Check do User
                 $sql = "SELECT id, senha, nome FROM users WHERE email = :email";
                 $stmt = $pdo->prepare($sql);
-                $stmt->execute([
-                    ':email' => $email
-                ]);
+                $stmt->execute([':email' => $email]);
                 $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
                 // Checagem do login
@@ -161,6 +206,13 @@ try {
 
             $message['general'] = "Requisição da nova senha efetuada com sucesso!";
             $status['general'] = "ok";
+            
+            // Proteção - Brute Force
+            if (!RateLimit($redis, $userIp, 'login', 5, 300)) {
+            $message['check'] = "Muitas tentativas de troca de senha. Aguarde 5 minutos e tente novamente.";
+            $status['check']  = "error";
+            break;
+            }
 
             if (!$email) {
                 $message['email'] = "E-mail inválido";
@@ -171,9 +223,7 @@ try {
             // Select SQL - Check do User
             $sql = "SELECT id, token, token_expiration FROM users WHERE email = :email";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([
-                ':email' => $email
-            ]);
+            $stmt->execute([':email' => $email]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
             if ($user && !empty($user['token'])) {
@@ -199,14 +249,14 @@ try {
                     $message['password'] = "Senha deve conter no mínimo 6 caracteres";
                     $status['password'] = "error";
                 } else {
-                    $password_hash = password_hash($password, PASSWORD_DEFAULT);
+                    $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
                     // Update SQL
-                    $Sql = "UPDATE users SET senha = :senha, token = NULL, token_expiration = NULL WHERE email = :email;";
-                    $st = $pdo->prepare($Sql);
-                    $st->execute([
+                    $sql = "UPDATE users SET senha = :senha, token = NULL, token_expiration = NULL WHERE email = :email";
+                    $stmt = $pdo->prepare($sql);
+                    $stmt->execute([
                         ':email' => $email,
-                        ':senha' => $password_hash
+                        ':senha' => $passwordHash
                     ]);
                     $message['password'] = "Senha atualizada!";
                     $status['password'] = "ok";
@@ -222,6 +272,14 @@ try {
             $message['general'] = "Requisição de reset da senha efetuada com sucesso!";
             $status['general'] = "ok";
 
+            if (!RateLimit($redis, $userIp, 'reset-token', 3, 600)) {
+            $message['token'] = "Muitos pedidos de token enviados. Aguarde 10 minutos.";
+            $status['token']  = "error";
+            $message['check'] = "Bloqueado por excesso de tentativas.";
+            $status['check']  = "error";
+            break;
+            }
+
             if (!$email) {
                 $message['email'] = "E-mail inválido";
                 $status['email'] = "error";
@@ -231,32 +289,26 @@ try {
             // Select SQL - Check do User
             $sql = "SELECT id FROM users WHERE email = :email";
             $stmt = $pdo->prepare($sql);
-            $stmt->execute([
-                ':email' => $email
-            ]);
+            $stmt->execute([':email' => $email]);
             $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
-            if (!$user) {
-                $message["token"] = "Token enviado caso o usuário esteja cadastrado";
-                $status["token"] = "ok";
-            } else {
-
+            if ($user) {
                 $token = sprintf("%06d", random_int(0, 999999));
                 $expires = date('Y-m-d H:i:s', strtotime('+30 minutes'));
 
                 $sql = "UPDATE users SET token = :token, token_expiration = :expires WHERE email = :email";
-                $st = $pdo->prepare($sql);
-                $st->execute([
+                $stmt = $pdo->prepare($sql);
+                $stmt->execute([
                     ':token' => $token,
                     ':expires' => $expires,
                     ':email' => $email
                 ]);
 
-                $message['token'] = "Token enviado caso o usuário esteja cadastrado";
-                $status['token'] = "ok";
-
                 TokenReset($email, $token);
             }
+            
+            $message["token"] = "Token enviado caso o usuário esteja cadastrado";
+            $status["token"] = "ok";
             break;
 
         default:

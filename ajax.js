@@ -17,12 +17,12 @@ $(document).ready(function () {
         if (response.status === "ok") {
           $resp.html(
             "<p style='color:green; display:block'>" +
-              response.mensagem +
+              response.message +
               "</p>",
           );
         } else {
           $resp.html(
-            "<p style='color:red; display:block'>" + response.mensagem + "</p>",
+            "<p style='color:red; display:block'>" + response.message + "</p>",
           );
         }
       },
