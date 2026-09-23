@@ -1,6 +1,5 @@
 CREATE DATABASE IF NOT EXISTS lrc1970 CHARACTER
-SET
-    utf8mb4 COLLATE utf8mb4_unicode_ci;
+SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 USE lrc1970;
 
@@ -8,10 +7,10 @@ USE lrc1970;
 CREATE TABLE
     users (
         id INT AUTO_INCREMENT PRIMARY KEY,
-        nome VARCHAR(100) NOT NULL,
+        nome VARCHAR(50) NOT NULL,
+        sobrenome varchar(100) not null,
         telefone VARCHAR(20),
         email VARCHAR(100) NOT NULL UNIQUE,
-        cep VARCHAR(9),
         senha VARCHAR(255) NOT NULL,
         tipo ENUM ('cliente', 'administrador') NOT NULL DEFAULT 'cliente'
     );
@@ -23,7 +22,29 @@ CREATE TABLE
         nome VARCHAR(100) NOT NULL UNIQUE
     );
 
--- 3. VEÍCULOS
+-- 3. CEPS (Isolamento de dependências transitivas - 3FN)
+CREATE TABLE
+    ceps (
+        cep VARCHAR(9) PRIMARY KEY,
+        logradouro VARCHAR(150) NOT NULL,
+        bairro VARCHAR(100) NOT NULL,
+        cidade VARCHAR(100) NOT NULL,
+        estado CHAR(2) NOT NULL
+    );
+
+-- 4. ENDEREÇOS DE USUÁRIOS
+CREATE TABLE
+    enderecos (
+        id_endereco INT AUTO_INCREMENT PRIMARY KEY,
+        id_usuario INT NOT NULL,
+        cep VARCHAR(9) NOT NULL,
+        numero VARCHAR(20) NOT NULL,
+        complemento VARCHAR(100),
+        FOREIGN KEY (id_usuario) REFERENCES users (id) ON DELETE CASCADE,
+        FOREIGN KEY (cep) REFERENCES ceps (cep)
+    );
+
+-- 5. VEÍCULOS
 CREATE TABLE
     veiculos (
         id_veiculo INT AUTO_INCREMENT PRIMARY KEY,
@@ -33,7 +54,7 @@ CREATE TABLE
         ano_fim YEAR
     );
 
--- 5. PRODUTOS
+-- 6. PRODUTOS
 CREATE TABLE
     produtos (
         id_produto INT AUTO_INCREMENT PRIMARY KEY,
@@ -46,7 +67,7 @@ CREATE TABLE
         FOREIGN KEY (id_categoria) REFERENCES categorias (id_categoria)
     );
 
--- 6. COMPATIBILIDADE
+-- 7. COMPATIBILIDADE
 CREATE TABLE
     compatibilidades (
         id_produto INT NOT NULL,
@@ -56,7 +77,7 @@ CREATE TABLE
         FOREIGN KEY (id_veiculo) REFERENCES veiculos (id_veiculo) ON DELETE CASCADE
     );
 
--- 7. CARRINHOS
+-- 8. CARRINHOS
 CREATE TABLE
     carrinhos (
         id_carrinho INT AUTO_INCREMENT PRIMARY KEY,
@@ -66,7 +87,7 @@ CREATE TABLE
         FOREIGN KEY (id_usuario) REFERENCES users (id)
     );
 
--- 8. ITENS DO CARRINHO
+-- 9. ITENS DO CARRINHO
 CREATE TABLE
     itens_carrinho (
         id_item INT AUTO_INCREMENT PRIMARY KEY,
@@ -78,11 +99,13 @@ CREATE TABLE
         UNIQUE (id_carrinho, id_produto)
     );
 
--- 9. PEDIDOS
+-- 10. PEDIDOS
 CREATE TABLE
     pedidos (
         id_pedido INT AUTO_INCREMENT PRIMARY KEY,
-        id_carrinho INT NOT NULL UNIQUE,
+        id_usuario INT NOT NULL,
+        id_endereco INT NOT NULL,
+        id_carrinho INT UNIQUE,
         data_pedido DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
         status ENUM (
             'aguardando_pagamento',
@@ -92,11 +115,12 @@ CREATE TABLE
             'entregue',
             'cancelado'
         ) NOT NULL DEFAULT 'aguardando_pagamento',
-        valor_total DECIMAL(10, 2) NOT NULL,
+        FOREIGN KEY (id_usuario) REFERENCES users (id),
+        FOREIGN KEY (id_endereco) REFERENCES enderecos (id_endereco),
         FOREIGN KEY (id_carrinho) REFERENCES carrinhos (id_carrinho)
     );
 
--- 10. ITENS DO PEDIDO
+-- 11. ITENS DO PEDIDO
 CREATE TABLE
     itens_pedido (
         id_item_pedido INT AUTO_INCREMENT PRIMARY KEY,
@@ -108,17 +132,16 @@ CREATE TABLE
         FOREIGN KEY (id_produto) REFERENCES produtos (id_produto)
     );
 
--- 11. ENDEREÇOS
+-- 12. MOVIMENTAÇÕES DE ESTOQUE (HISTÓRICO)
 CREATE TABLE
-    enderecos (
-        id_endereco INT AUTO_INCREMENT PRIMARY KEY,
-        id_usuario INT NOT NULL,
-        cep VARCHAR(9) NOT NULL,
-        logradouro VARCHAR(150),
-        numero VARCHAR(20),
-        complemento VARCHAR(100),
-        bairro VARCHAR(100),
-        cidade VARCHAR(100),
-        estado CHAR(2),
-        FOREIGN KEY (id_usuario) REFERENCES users (id) ON DELETE CASCADE
+    movimentacoes_estoque (
+        id_movimentacao INT AUTO_INCREMENT PRIMARY KEY,
+        id_produto INT NOT NULL,
+        id_usuario INT,
+        tipo ENUM ('entrada', 'saida', 'ajuste') NOT NULL,
+        quantidade INT NOT NULL,
+        data_movimentacao DATETIME NOT NULL DEFAULT CURRENT_TIMESTAMP,
+        observacao VARCHAR(255),
+        FOREIGN KEY (id_produto) REFERENCES produtos (id_produto) ON DELETE CASCADE,
+        FOREIGN KEY (id_usuario) REFERENCES users (id) ON DELETE SET NULL
     );
