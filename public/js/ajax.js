@@ -8,7 +8,7 @@ $(document).ready(function () {
     let $resp = $("#resp");
 
     $.ajax({
-      url: "processData.php",
+      url: "process.php",
       type: "POST",
       data: dados,
       dataType: "json",
