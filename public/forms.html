@@ -7,12 +7,11 @@
     <meta charset="utf-8">
     <meta name="viewport" content="width=device-width, initial-scale=1">
     <title>LRC1970</title>
+    <link rel="icon" type="image/png" href="assets/images/logo.png">
     <link rel="stylesheet" href="../public/css/forms.css">
 </head>
 
 <body>
-
-    <!-- logo sera alterada para sua devida versao assim que possivel -->
     <img src="assets/images/logo.png" alt="LRC1970" class="logo">
 
     <form id="forms_cad" method="post">
@@ -27,7 +26,7 @@
 
             <div class="form-input">
                 <label for="cad-email">Email</label>
-                <input name="e-mail" type="email" id="cad-email" class="input" placeholder="nome@exemplo.com">
+                <input name="email" type="email" id="cad-email" class="input" placeholder="nome@exemplo.com">
             </div>
 
             <div class="form-input">
@@ -36,7 +35,7 @@
             </div>
 
             <!-- Botões -->
-            <div class="cad-btn-container">
+            <div class="btn-container">
                 <button type="submit" id="cadastroBtn" class="btn">Cadastrar</button>
                 <button type="button" id="already-log" class="btn-secundario">Já sou cadastrado</button>
             </div>
@@ -44,10 +43,10 @@
         </div>
 
         <!-- Definição do formulário -->
-        <input type="text" name="code" id="code" style="display:none" value="cadastro">
+        <input type="hidden" name="code" value="cadastro">
 
         <!-- Resposta da requisição -->
-        <div id="resp"></div>
+        <div class="resp"></div>
 
     </form>
 
@@ -59,7 +58,7 @@
             <!-- Labels e Inputs-->
             <div class="form-input">
                 <label for="log-email">Email</label>
-                <input name="e-mail" type="email" class="input" id="log-email" placeholder="nome@exemplo.com">
+                <input name="email" type="email" class="input" id="log-email" placeholder="nome@exemplo.com">
             </div>
 
             <div class="form-input">
@@ -68,7 +67,7 @@
             </div>
 
             <!-- Botões -->
-            <div class="log-btn-container">
+            <div class="btn-container">
                 <button type="submit" id="loginBtn" class="btn">Logar</button>
                 <button type="button" id="not-cad" class="btn-secundario">Não sou cadastrado</button>
                 <button type="button" id="fgt-password" class="btn-secundario">Esqueci a senha</button>
@@ -77,10 +76,10 @@
         </div>
 
         <!-- Definição do formulário -->
-        <input type="text" name="code" id="code" style="display:none" value="login">
+        <input type="hidden" name="code" value="login">
 
         <!-- Resposta da requisição -->
-        <div id="resp"></div>
+        <div class="resp"></div>
 
     </form>
 
@@ -92,7 +91,7 @@
             <!-- Labels e Inputs-->
             <div class="form-input">
                 <label for="pass-email">Email</label>
-                <input name="e-mail" type="email" class="input" id="pass-email" placeholder="nome@exemplo.com">
+                <input name="email" type="email" class="input" id="pass-email" placeholder="nome@exemplo.com">
             </div>
 
             <div class="form-input">
@@ -106,17 +105,43 @@
             </div>
 
             <!-- Botões -->
-            <div class="pass-btn-container">
+            <div class="btn-container">
                 <button type="submit" id="password-btn" class="btn">Atualizar senha</button>
+                <button type="button" id="password-cancel" class="btn-secundario">Voltar</button>
             </div>
 
         </div>
 
         <!-- Definição do formulário -->
-        <input type="text" name="code" id="code" style="display:none" value="password">
+        <input type="hidden" name="code" value="password">
 
         <!-- Resposta da requisição -->
-        <div id="resp"></div>
+        <div class="resp"></div>
+
+    </form>
+
+    <form id="forms_token" method="post">
+
+        <div class="container">
+
+            <!-- Labels e Inputs-->
+            <div class="form-input">
+                <label for="token">Digite o código de verificação</label>
+                <input name="token-numbers" type="number" class="input" id="token-numbers" placeholder="123456">
+            </div>
+
+            <!-- Botões -->
+            <div class="btn-container">
+                <button type="submit" id="token-confirm-btn" class="btn">Confirmar</button>
+            </div>
+
+        </div>
+
+        <!-- Definição do formulário -->
+        <input type="hidden" name="code" value="token">
+
+        <!-- Resposta da requisição -->
+        <div class="resp"></div>
 
     </form>
 

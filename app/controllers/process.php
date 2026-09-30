@@ -230,7 +230,7 @@ try {
                 $message['check'] = "User encontrado com sucesso!";
                 $status['check'] = "ok";
 
-                $userToken = $_POST['token'] ?? "";
+                $userToken = $_POST['token-numbers'] ?? "";
                 $now = date('Y-m-d H:i:s');
 
                 if (hash_equals($userToken, $user['token']) && $user['token_expiration'] >= $now) {
@@ -268,7 +268,7 @@ try {
             break;
 
         // CÓDIGO DO FORMULÁRIO DE ENVIO DO TOKEN
-        case "reset-token":
+        case "token":
             $message['general'] = "Requisição de reset da senha efetuada com sucesso!";
             $status['general'] = "ok";
 

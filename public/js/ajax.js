@@ -1,11 +1,11 @@
-// PHP - Processamento dos formulários
+// AJAX - Processamento dos formulários
 $(document).ready(function () {
-  $("#forms_log, #forms_cad, #forms_pass").on("submit", function (e) {
+  $("#forms_log, #forms_cad, #forms_pass, #forms_token").on("submit", function (e) {
     e.preventDefault();
 
     let $form = $(this);
     let dados = $form.serialize();
-    let $resp = $("#resp");
+    let $resp = $form.find(".resp");
 
     $.ajax({
       url: "process.php",
@@ -14,23 +14,13 @@ $(document).ready(function () {
       dataType: "json",
       success: function (response) {
         console.log(response);
-        if (response.status === "ok") {
-          $resp.html(
-            "<p style='color:green; display:block'>" +
-              response.message +
-              "</p>",
-          );
+        if (response.status.check === "ok" || response.status.general === "ok") {
+          $resp.html("<p style='color:green; display:block'>" + response.message.check + "</p>");
         } else {
-          $resp.html(
-            "<p style='color:red; display:block'>" + response.message + "</p>",
-          );
+          let erroMsg = response.message.check || response.message.general || "Erro ao processar.";
+          $resp.html("<p style='color:red; display:block'>" + erroMsg + "</p>");
         }
-      },
-      error: function () {
-        $resp.html(
-          "<p style='color:red; display:block'>Erro na requisição!!</p>",
-        );
-      },
+      }
     });
   });
 });

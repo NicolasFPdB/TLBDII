@@ -1,0 +1,175 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title> LRC1970 AutoParts</title>
+  <link rel="icon" type="image/png" href="assets/images/logo.png">
+  <link rel="stylesheet" href="../public/css/index.css">
+</head>
+
+<body>
+
+  <!-- Barra superior -->
+  <div class="topbar">
+    <span>Entregas para todo o Brasil.</span>
+    <span>Acesse também nossa loja na Shopee: <a
+        href="https://shopee.com.br/luizrcunha1970?entryPoint=ShopBySearch&searchKeyword=lrc1970%20autoparts">LRC1970 na
+        Shopee!</a></span>
+    <span>Atendimento: (11) 99159-9709</span>
+  </div>
+
+  <!-- Cabeçalho -->
+  <header>
+    <div class="header-container">
+
+      <!-- Logo -->
+      <a href="#" class="logo">LRC1970 AUTOPARTS</a>
+
+      <!-- Busca -->
+      <div class="search-box">
+        <input type="text" placeholder="Buscar por peça, modelo ou código...">
+        <button>Buscar</button>
+      </div>
+
+      <!-- Conta e carrinho -->
+      <div class="user-actions">
+        <a href="#" style="color: inherit; text-decoration: none;">Minha Conta</a>
+        <a href="#" style="color: inherit; text-decoration: none;">Carrinho (0)</a>
+      </div>
+
+    </div>
+  </header>
+
+  <!-- Banner principal -->
+  <section class="hero">
+    <div class="hero-text">
+      <h1>Encontre a peça certa <br>para o seu veículo.</h1>
+      <p>Peças originais e paralelas com os melhores preços do mercado.</p>
+    </div>
+
+    <!-- carrossel -->
+    <div class="carrossel">
+      <div class="carrossel-track">
+        <a href="#"></a>
+        <a href="#"></a>
+        <a href="#"></a>
+      </div>
+    </div>
+  </section>
+
+  <!-- Categorias de produtos -->
+  <section class="categories">
+
+    <button class="category-arrow left" onclick="scrollCategories(-1)">‹</button>
+
+    <div class="categories-container" id="categoriesContainer">
+      <button class="cat-card" data-category="all">Todos os produtos</button>
+      <button class="cat-card" data-category="acessorios">Acessórios</button>
+      <button class="cat-card" data-category="alimentacao">Alimentação</button>
+      <button class="cat-card" data-category="cabos-alavancas">Cabos e Alavancas</button>
+      <button class="cat-card" data-category="cambio">Câmbio</button>
+      <button class="cat-card" data-category="embreagem">Embreagem</button>
+      <button class="cat-card" data-category="lanternas">Lanternas</button>
+      <button class="cat-card" data-category="motor">Motor</button>
+      <button class="cat-card" data-category="suspensao">Suspensão</button>
+      <button class="cat-card" data-category="transmissao">Transmissão</button>
+    </div>
+
+    <button class="category-arrow right" onclick="scrollCategories(1)">›</button>
+
+  </section>
+
+  <!-- Produtos mais vendidos -->
+  <section class="products-section">
+    <h2 class="section-title">Mais Vendidos</h2>
+
+    <div class="product-grid">
+
+      <!-- Produto 1 -->
+      <div class="product-card" data-category="cabos-alavancas">
+        <div class="product-img">[Imagem do Produto]</div>
+        <div class="product-info">
+          <div class="product-title">Cabo de Engate de Marchas Ducato Boxer e Jumper 2.8/2.3 2007-2017</div>
+          <div class="product-price">R$ 305,00</div>
+          <div class="shipping-tag">Frete Grátis</div>
+          <button class="btn-buy">Comprar</button>
+        </div>
+      </div>
+
+      <!-- Produto 2 -->
+      <div class="product-card">
+        <div class="product-img">[Imagem do Produto]</div>
+        <div class="product-info">
+          <div class="product-title">Óleo 5W30 Sintético 1L API SP - Marca Premium</div>
+          <div class="product-price">R$ 45,00</div>
+          <div class="shipping-tag">Frete Grátis</div>
+          <button class="btn-buy">Comprar</button>
+        </div>
+      </div>
+
+      <!-- Produto 3 -->
+      <div class="product-card">
+        <div class="product-img">[Imagem do Produto]</div>
+        <div class="product-info">
+          <div class="product-title">Par de Amortecedores Dianteiros Fiat Palio</div>
+          <div class="product-price">R$ 489,00</div>
+          <div class="shipping-tag">Frete Grátis</div>
+          <button class="btn-buy">Comprar</button>
+        </div>
+      </div>
+
+      <!-- Produto 4 -->
+      <div class="product-card">
+        <div class="product-img">[Imagem do Produto]</div>
+        <div class="product-info">
+          <div class="product-title">Filtro de Ar de Alta Performance Chevrolet Onix</div>
+          <div class="product-price">R$ 39,90</div>
+          <div class="shipping-tag">Chegará amanhã</div>
+          <button class="btn-buy">Comprar</button>
+        </div>
+      </div>
+
+    </div>
+  </section>
+
+  <!-- Rodapé -->
+  <footer>
+    <div class="footer-content">
+      <div class="footer-column">
+        <h4>LRC1970 AutoPeças</h4>
+        <ul>
+          <li>Informações claras, autenticidade e confiança para o seu veículo.</li>
+        </ul>
+      </div>
+
+      <div class="footer-column">
+        <h4>Formas de Pagamento</h4>
+        <ul>
+          <li>• Cartão de Crédito</li>
+          <li>• Cartão de Débito</li>
+          <li>• Pix</li>
+        </ul>
+      </div>
+
+      <div class="footer-column">
+        <h4>Opções de Entrega</h4>
+        <ul>
+          <li>• Correios</li>
+          <li>• Transportadoras</li>
+          <li>• Entrega Direta</li>
+          <li>• Motoboy (Uber Envios)</li>
+        </ul>
+      </div>
+    </div>
+
+    <div class="footer-bottom">
+      &copy; 2026 LRC1970 AutoParts - Todos os direitos reservados.
+    </div>
+  </footer>
+
+</body>
+<script src="../public/js/index.js"></script>
+
+</html>
