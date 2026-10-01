@@ -17,7 +17,7 @@ try {
 }
 catch (PDOException $e)
 {
-    die("Erro ao encontrar com o banco, filhô: " . $e->getMessage());
+    die("Erro ao encontrar database: " . $e->getMessage());
 }
 
 ?>
