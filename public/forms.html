@@ -94,19 +94,9 @@
                 <input name="email" type="email" class="input" id="pass-email" placeholder="nome@exemplo.com">
             </div>
 
-            <div class="form-input">
-                <label for="pass-pass">Senha</label>
-                <input name="password" type="password" class="input" id="pass-pass" placeholder="Senha">
-            </div>
-
-            <div class="form-input">
-                <label for="pass-confirm">Confirme sua senha</label>
-                <input name="password" type="password" class="input" id="pass-confirm" placeholder="Confirme sua senha">
-            </div>
-
             <!-- Botões -->
             <div class="btn-container">
-                <button type="submit" id="password-btn" class="btn">Atualizar senha</button>
+                <button type="submit" id="password-btn" class="btn">Confirmar</button>
                 <button type="button" id="password-cancel" class="btn-secundario">Voltar</button>
             </div>
 
@@ -125,14 +115,26 @@
         <div class="container">
 
             <!-- Labels e Inputs-->
+            <input type="hidden" name="email" id="token-email">
+            
             <div class="form-input">
                 <label for="token">Digite o código de verificação</label>
                 <input name="token-numbers" type="number" class="input" id="token-numbers" placeholder="123456">
             </div>
 
+            <div class="form-input">
+                <label for="pass-pass">Senha</label>
+                <input name="password" type="password" class="input" id="pass-pass" placeholder="Senha">
+            </div>
+
+            <div class="form-input">
+                <label for="pass-confirm">Confirme sua senha</label>
+                <input name="password-confirm" type="password" class="input" id="pass-confirm" placeholder="Confirme sua senha">
+            </div>
+
             <!-- Botões -->
             <div class="btn-container">
-                <button type="submit" id="token-confirm-btn" class="btn">Confirmar</button>
+                <button type="submit" id="token-confirm-btn" class="btn">Atualizar senha</button>
             </div>
 
         </div>
