@@ -1,8 +1,4 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-header('Content-Type: application/json; charset=utf-8');
 
 // Conexão com a Database
     include_once('conection.php');
@@ -10,17 +6,45 @@ header('Content-Type: application/json; charset=utf-8');
 // Conexão com E-mail
     include_once('mail.php');
 
-    // Conexão com o Redis
-    $redis = null;
+
+function RateLimitDb(PDO $pdo, string $ip, string $action, int $maxAttempts = 5, int $seconds = 300): bool
+{
     try {
-        $redisInstance = new Redis();
-        if ($redisInstance->connect('127.0.0.1', 6379)) {
-            $redis = $redisInstance;
+        $now = date('Y-m-d H:i:s');
+
+        $sql = "SELECT id, attempts, last_attempt FROM rate_limits WHERE ip = :ip AND action = :action";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([':ip' => $ip, ':action' => $action]);
+        $record = $stmt->fetch(PDO::FETCH_ASSOC);
+
+        if ($record) {
+            $timePassed = time() - strtotime($record['last_attempt']);
+
+            if ($timePassed > $seconds) {
+                $updateSql = "UPDATE rate_limits SET attempts = 1, last_attempt = :now WHERE id = :id";
+                $updateStmt = $pdo->prepare($updateSql);
+                $updateStmt->execute([':now' => $now, ':id' => $record['id']]);
+                return true;
+            }
+
+            if ($record['attempts'] < $maxAttempts) {
+                $updateSql = "UPDATE rate_limits SET attempts = attempts + 1, last_attempt = :now WHERE id = :id";
+                $updateStmt = $pdo->prepare($updateSql);
+                $updateStmt->execute([':now' => $now, ':id' => $record['id']]);
+                return true;
+            }
+
+            return false;
+        } else {
+            $insertSql = "INSERT INTO rate_limits (ip, action, attempts, last_attempt) VALUES (:ip, :action, 1, :now)";
+            $insertStmt = $pdo->prepare($insertSql);
+            $insertStmt->execute([':ip' => $ip, ':action' => $action, ':now' => $now]);
+            return true;
         }
-    } catch (Exception $e) {
-        $message['general'] = "Erro ao conectar ao serviço de cache.";
-        $status['general']  = "error";
+    } catch (Throwable $e) {
+        return true;
     }
+}
 
 // Declaração - Variáveis
 $name = trim($_POST['name'] ?? "");
@@ -52,27 +76,6 @@ $status = [
     'cep' => ""
 ];
 
-function RateLimit(?Redis $redis, string $ip, string $action, int $maxAttempts = 5, int $Seconds = 300): bool {
-    if (!$redis) {
-        return true;
-    } 
-    try {
-        $key = "rate_limit:{$action}:{$ip}";
-        $currentAttempts = $redis->get($key);
-        if ($currentAttempts && (int)$currentAttempts >= $maxAttempts) {
-            return false;
-        }
-        $newAttempts = $redis->incr($key);
-        if ($newAttempts === 1) {
-            $redis->expire($key, $Seconds);
-        }
-        return true;
-    }
-    catch (Throwable $e) {
-        return false;
-    }
-}
-
 try {
     switch ($code) {
         // CÓDIGO DO FORMULÁRIO DE CADASTRO
@@ -81,7 +84,7 @@ try {
             $status['general'] = "ok";
 
             // Proteção - Automatizada de criação de contas
-            if (!RateLimit($redis, $userIp, 'cadastro', 10, 600)) {
+            if (!RateLimitDb($pdo, $userIp, 'cadastro', 10, 600)) {
                 $message['check'] = "Muitas tentativas de cadastro. Aguarde alguns minutos.";
                 $status['check']  = "error";
                 break;
@@ -166,7 +169,7 @@ try {
             $status['general'] = "ok";
 
             // Proteção - Brute Force
-            if (!RateLimit($redis, $userIp, 'login', 5, 300)) {
+            if (!RateLimitDb($pdo, $userIp, 'login', 5, 300)) {
             $message['check'] = "Muitas tentativas de login. Aguarde 5 minutos e tente novamente.";
             $status['check']  = "error";
             break;
@@ -207,7 +210,7 @@ try {
             $message['general'] = "Requisição de reset da senha efetuada com sucesso!";
             $status['general'] = "ok";
 
-            if (!RateLimit($redis, $userIp, 'reset-token', 3, 600)) {
+            if (!RateLimitDb($pdo, $userIp, 'reset-token', 3, 600)) {
             $message['token'] = "Muitos pedidos de token enviados. Aguarde 10 minutos.";
             $status['token']  = "error";
             $message['check'] = "Bloqueado por excesso de tentativas.";
@@ -253,7 +256,7 @@ try {
                 $status['general'] = "ok";
                             
                 // Proteção - Brute Force
-                if (!RateLimit($redis, $userIp, 'login', 5, 300)) {
+                if (!RateLimitdB($pdo, $userIp, 'login', 5, 300)) {
                 $message['check'] = "Muitas tentativas de troca de senha. Aguarde 5 minutos e tente novamente.";
                 $status['check']  = "error";
                 break;

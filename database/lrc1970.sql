@@ -145,3 +145,18 @@ CREATE TABLE
         FOREIGN KEY (id_produto) REFERENCES produtos (id_produto) ON DELETE CASCADE,
         FOREIGN KEY (id_usuario) REFERENCES users (id) ON DELETE SET NULL
     );
+    
+-- 13. Tabela de controle de tentativas
+create table
+	rate_limits (
+		id int auto_increment primary key,
+        ip varchar(45) not null,
+        acao varchar(50) not null,
+        attempts int default 1,
+        last_attempt datetime not null,
+        unique key ip_acao (ip, acao)
+	);
+
+-- Teste
+        insert into users (nome, sobrenome, telefone, email, senha, tipo) values (
+        "admin", "primeiro", "11111111111", "admin@lrc1970.com", "LRC_Admin01", "administrador");
