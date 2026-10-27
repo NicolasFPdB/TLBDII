@@ -91,9 +91,18 @@ header {
 
 .cart-btn {
 	background-color: var(--primary-color);
+	color: #fff;
+	border: none;
 	padding: 8px 15px;
 	border-radius: 4px;
+	font-size: 14px;
 	font-weight: bold;
+	cursor: pointer;
+	transition: background-color 0.2s;
+}
+
+.cart-btn:hover {
+	background-color: var(--primary-hover);
 }
 
 .container {
