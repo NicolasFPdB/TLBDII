@@ -1,4 +1,4 @@
-async function loadData() {
+async function loadCartData() {
   try {
     const response = await fetch("../public/assets/data/data.json");
 
@@ -8,24 +8,69 @@ async function loadData() {
 
     const dataJson = await response.json();
 
-    console.log(dataJson);
+    // Selecionamos alguns produtos do JSON para simular itens no carrinho (ex: os 2 primeiros)
+    // Você pode filtrar ou puxar de outra fonte (como o localStorage) futuramente.
+    const itensCarrinho = dataJson.slice(0, 2);
+
+    // Instancia o carrinho passando os dados dinâmicos
+    const container = document.querySelector(".cart-container");
+    if (container) {
+      const meuCarrinho = new carrinho(itensCarrinho);
+      container.appendChild(meuCarrinho.element);
+    }
   } catch (erro) {
-    console.error("Ocorreu um erro:", erro);
+    console.error("Ocorreu um erro ao carregar os dados:", erro);
   }
 }
 
-loadData();
-
 class carrinho {
-  constructor(index, optionsData = {}) {
-    this.index = index;
-    this.optionsData = optionsData;
+  constructor(produtos = []) {
+    this.produtos = produtos;
     this.element = this.createElement();
   }
 
   createElement() {
     const cart = document.createElement("div");
     cart.className = "cart-wrapper";
+
+    // Gera o HTML dinâmico dos itens com base no array recebido
+    const produtosHTML =
+      this.produtos.length > 0
+        ? this.produtos
+            .map(
+              (item) => `
+            <article class="cart-item">
+                <div class="cart-item-product">
+                    <div class="product-image"><img src="../public/assets/img/placeholder.png" alt="[Foto da Peça]"></div>
+                    <div class="product-info">
+                        <h3 class="product-title">${item["Descrição do Produto"]}</h3>
+                        <span class="product-code">Cód: ${item["Código"]}</span>
+                        <span class="product-compatibility">Aplica-se: Linha Automotiva</span>
+                        <span class="product-stock">✓ Em Estoque</span>
+                    </div>
+                </div>
+                <div class="cart-price">R$ 45,90</div>
+                <div class="qty-control">
+                    <button type="button" aria-label="Diminuir">−</button>
+                    <input type="number" value="1" min="1">
+                    <button type="button" aria-label="Aumentar">+</button>
+                </div>
+                <div class="cart-subtotal">R$ 45,90</div>
+                <button type="button" class="btn-remove" aria-label="Remover item">✕</button>
+            </article>
+        `,
+            )
+            .join("")
+        : `
+            <div class="cart-empty">
+                <p>Seu carrinho está vazio.</p>
+                <a href="home.html" class="btn-buy">Ver peças disponíveis</a>
+            </div>
+        `;
+
+    // Calcula a quantidade de itens dinamicamente
+    const totalItens = this.produtos.length;
+
     cart.innerHTML = `
             <main class="cart-section">
                 <h2 class="section-title">Meu Carrinho</h2>
@@ -37,51 +82,7 @@ class carrinho {
                     <span>Subtotal</span>
                 </div>
 
-                <article class="cart-item">
-                    <div class="cart-item-product">
-                        <div class="product-image"><img src="" alt="[Foto da Peça]"></div>
-                        <div class="product-info">
-                            <h3 class="product-title">Filtro de Óleo Do Motor</h3>
-                            <span class="product-code">Cód: FO-2390</span>
-                            <span class="product-compatibility">Aplica-se: Ducato 2.3</span>
-                            <span class="product-stock">✓ Em Estoque</span>
-                        </div>
-                    </div>
-                    <div class="cart-price">R$ 45,90</div>
-                    <div class="qty-control">
-                        <button type="button" aria-label="Diminuir">−</button>
-                        <input type="number" value="1" min="1">
-                        <button type="button" aria-label="Aumentar">+</button>
-                    </div>
-                    <div class="cart-subtotal">R$ 45,90</div>
-                    <button type="button" class="btn-remove" aria-label="Remover item">✕</button>
-                </article>
-
-                <article class="cart-item">
-                    <div class="cart-item-product">
-                        <div class="product-image"><img src="" alt="[Foto da Peça]"></div>
-                        <div class="product-info">
-                            <h3 class="product-title">Pastilha de Freio Dianteira</h3>
-                            <span class="product-code">Cód: PF-1180</span>
-                            <span class="product-compatibility">Aplica-se: Master 2.5</span>
-                            <span class="product-stock">✓ Em Estoque</span>
-                        </div>
-                    </div>
-                    <div class="cart-price">R$ 129,90</div>
-                    <div class="qty-control">
-                        <button type="button" aria-label="Diminuir">−</button>
-                        <input type="number" value="2" min="1">
-                        <button type="button" aria-label="Aumentar">+</button>
-                    </div>
-                    <div class="cart-subtotal">R$ 259,80</div>
-                    <button type="button" class="btn-remove" aria-label="Remover item">✕</button>
-                </article>
-
-                <!-- Estado de carrinho vazio  -->
-                <div class="cart-empty" hidden>
-                    <p>Seu carrinho está vazio.</p>
-                    <a href="home.html" class="btn-buy">Ver peças disponíveis</a>
-                </div>
+                ${produtosHTML}
 
                 <div class="cart-actions">
                     <a href="home.html" class="link-back">← Continuar comprando</a>
@@ -107,7 +108,7 @@ class carrinho {
                 </div>
 
                 <ul class="summary-lines">
-                    <li><span>Subtotal (3 itens)</span><span>R$ 305,70</span></li>
+                    <li><span>Subtotal (${totalItens} itens)</span><span>R$ 305,70</span></li>
                     <li><span>Frete</span><span>A calcular</span></li>
                     <li><span>Desconto</span><span>− R$ 0,00</span></li>
                     <li class="summary-total"><span>Total</span><span>R$ 305,70</span></li>
@@ -118,14 +119,12 @@ class carrinho {
                 <p class="summary-payments">Aceitamos: Cartão de Crédito, Cartão de Débito e Pix</p>
             </aside>
         `;
+
     return cart;
   }
 }
 
+// Executa o carregamento assim que o DOM estiver pronto
 document.addEventListener("DOMContentLoaded", () => {
-  const container = document.querySelector(".cart-container");
-  if (container) {
-    const meuCarrinho = new carrinho(1);
-    container.appendChild(meuCarrinho.element);
-  }
+  loadCartData();
 });
