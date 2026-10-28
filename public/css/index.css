@@ -13,7 +13,7 @@
   box-sizing: border-box;
   margin: 0;
   padding: 0;
-  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+  font-family: "Segoe UI", Tahoma, Geneva, Verdana, sans-serif;
 }
 
 body {
@@ -160,7 +160,6 @@ header {
 }
 
 @keyframes carousel {
-
   0%,
   30% {
     transform: translateX(0);
@@ -179,7 +178,6 @@ header {
   100% {
     transform: translateX(0);
   }
-
 }
 
 .categories {
@@ -204,7 +202,10 @@ header {
   padding: 15px;
   border-radius: 8px;
   cursor: pointer;
-  transition: background-color 0.2s, border-color 0.2s, color 0.2s;
+  transition:
+    background-color 0.2s,
+    border-color 0.2s,
+    color 0.2s;
 
   min-width: 150px;
   width: 150px;
@@ -283,7 +284,9 @@ header {
   overflow: hidden;
   display: flex;
   flex-direction: column;
-  transition: transform 0.2s, box-shadow 0.2s;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
 }
 
 /* Efeito ao passar o mouse no produto */

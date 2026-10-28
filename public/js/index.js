@@ -1,10 +1,28 @@
+async function loadData() {
+  try {
+    const response = await fetch("../public/assets/data/data.json");
+
+    if (!response.ok) {
+      throw new Error(`Erro ao carregar o ficheiro: ${response.status}`);
+    }
+
+    const dataJson = await response.json();
+
+    console.log(dataJson);
+  } catch (erro) {
+    console.error("Ocorreu um erro:", erro);
+  }
+}
+
+loadData();
+
 // Rolagem
 function scrollCategories(direction) {
   const container = document.getElementById("categoriesContainer");
 
   container.scrollBy({
     left: direction * 500,
-    behavior: "smooth"
+    behavior: "smooth",
   });
 }
 
@@ -12,22 +30,21 @@ function scrollCategories(direction) {
 const categoryButtons = document.querySelectorAll(".cat-card");
 const products = document.querySelectorAll(".product-card");
 
-categoryButtons.forEach(button => {
+categoryButtons.forEach((button) => {
   button.addEventListener("click", () => {
     const selectedCategory = button.dataset.category;
     if (button.classList.contains("active")) {
       button.classList.remove("active");
-      products.forEach(product => {
+      products.forEach((product) => {
         product.style.display = "";
       });
       return;
-    }
-    else {
-      categoryButtons.forEach(otherButton => {
+    } else {
+      categoryButtons.forEach((otherButton) => {
         otherButton.classList.remove("active");
       });
       button.classList.add("active");
-      products.forEach(product => {
+      products.forEach((product) => {
         if (
           selectedCategory === "todos" ||
           product.dataset.category === selectedCategory

@@ -160,3 +160,6 @@ create table
 -- Teste
         insert into users (nome, sobrenome, telefone, email, senha, tipo) values (
         "admin", "primeiro", "11111111111", "admin@lrc1970.com", "LRC_Admin01", "administrador");
+        
+-- Confirmação de sucesso do teste
+select * from users;
