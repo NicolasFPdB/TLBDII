@@ -1,6 +1,6 @@
 <?php
 require_once __DIR__ . '/../config/config.php';
-require_once __DIR__ . '/../controllers/session.php';
+require_once __DIR__ . '/../session.php';
 session_boot();
 
 const SESSAO_INATIVIDADE = 1800; // 30 min
