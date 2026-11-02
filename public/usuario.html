@@ -1,0 +1,1077 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Minha Conta - LRC1970 AutoPeças</title>
+
+    <style>
+        :root {
+            --primary-color: #fb4516;
+            --primary-hover: #df3e15;
+            --bg-dark: #121212;
+            --bg-light: #F8F9FA;
+            --card-bg: #FFFFFF;
+            --text-main: #212529;
+            --text-muted: #6C757D;
+            --border-color: #E0E0E0;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+            font-family: 'Segoe UI', Tahoma, Verdana, sans-serif;
+        }
+
+        html {
+            scroll-behavior: smooth;
+            scroll-padding-top: 20px;
+        }
+
+        body {
+            background-color: var(--bg-light);
+            color: var(--text-main);
+            display: flex;
+            flex-direction: column;
+            min-height: 100vh;
+            overflow-x: hidden;
+        }
+
+        button,
+        input {
+            font: inherit;
+        }
+
+        header {
+            background-color: var(--bg-dark);
+            color: #FFF;
+            padding: 15px 5%;
+            display: flex;
+            flex-wrap: wrap;
+            justify-content: space-between;
+            align-items: center;
+            gap: 15px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        .logo {
+            font-size: 24px;
+            font-weight: bold;
+            color: #FFF;
+            text-decoration: none;
+            white-space: nowrap;
+        }
+
+        .logo span {
+            color: var(--primary-color);
+        }
+
+        .search-bar {
+            display: flex;
+            flex: 1;
+            max-width: 500px;
+            min-width: 0;
+        }
+
+        .search-bar input {
+            width: 100%;
+            min-width: 0;
+            padding: 10px 15px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px 0 0 4px;
+            outline: none;
+            font-size: 14px;
+        }
+
+        .search-bar input:focus {
+            border-color: var(--primary-color);
+        }
+
+        .search-bar button {
+            background-color: var(--primary-color);
+            color: #FFF;
+            border: none;
+            padding: 10px 20px;
+            border-radius: 0 4px 4px 0;
+            cursor: pointer;
+            font-weight: bold;
+            transition: background-color 0.2s;
+        }
+
+        .search-bar button:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .user-actions {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+        }
+
+        .user-actions a {
+            color: #FFF;
+            text-decoration: none;
+            font-size: 14px;
+        }
+
+        .user-actions a:hover {
+            color: var(--primary-color);
+        }
+
+        .user-actions .cart-btn {
+            background-color: var(--primary-color);
+            padding: 8px 15px;
+            border-radius: 4px;
+            font-weight: bold;
+        }
+
+        .user-actions .cart-btn:hover {
+            background-color: var(--primary-hover);
+            color: #FFF;
+        }
+
+        .container {
+            display: flex;
+            flex: 1;
+            width: 100%;
+            padding: 25px 5%;
+            gap: 25px;
+            align-items: flex-start;
+        }
+
+        aside.user-sidebar {
+            width: 260px;
+            min-width: 260px;
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 20px;
+            height: fit-content;
+        }
+
+        .profile-summary {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            text-align: center;
+            padding-bottom: 20px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 20px;
+        }
+
+        .avatar-placeholder {
+            width: 70px;
+            height: 70px;
+            background-color: var(--primary-color);
+            color: #FFF;
+            font-size: 28px;
+            font-weight: bold;
+            border-radius: 50%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            margin-bottom: 12px;
+        }
+
+        .profile-summary h3 {
+            font-size: 16px;
+            color: var(--bg-dark);
+            margin-bottom: 5px;
+        }
+
+        .profile-summary span {
+            font-size: 13px;
+            color: var(--text-muted);
+            word-break: break-word;
+        }
+
+        .user-nav ul {
+            list-style: none;
+        }
+
+        .user-nav ul li {
+            margin-bottom: 8px;
+        }
+
+        .user-nav ul li a {
+            display: block;
+            padding: 10px 12px;
+            color: var(--text-main);
+            text-decoration: none;
+            border-radius: 4px;
+            font-size: 14px;
+            transition: background 0.2s, color 0.2s;
+        }
+
+        .user-nav ul li a:hover,
+        .user-nav ul li a.active {
+            background-color: #FFF3EB;
+            color: var(--primary-color);
+            font-weight: bold;
+        }
+
+        .user-nav ul li a.logout-btn {
+            color: #D32F2F;
+            margin-top: 15px;
+            border-top: 1px solid var(--border-color);
+            border-radius: 0;
+            padding-top: 15px;
+        }
+
+        .user-nav ul li a.logout-btn:hover {
+            background-color: #FFEBEE;
+        }
+
+        main.user-content {
+            flex: 1;
+            min-width: 0;
+            display: flex;
+            flex-direction: column;
+            gap: 20px;
+        }
+
+        .card-box {
+            background: var(--card-bg);
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            padding: 25px;
+            min-width: 0;
+        }
+
+        .card-title {
+            font-size: 18px;
+            color: var(--bg-dark);
+            margin-bottom: 20px;
+            border-bottom: 2px solid var(--primary-color);
+            padding-bottom: 8px;
+            width: fit-content;
+        }
+
+        .section-description {
+            color: var(--text-muted);
+            font-size: 14px;
+            margin-bottom: 20px;
+            line-height: 1.5;
+        }
+
+        .form-subtitle {
+            color: var(--bg-dark);
+            font-size: 16px;
+            margin-top: 25px;
+            margin-bottom: 15px;
+        }
+
+        .form-grid {
+            display: grid;
+            grid-template-columns: repeat(2, minmax(0, 1fr));
+            gap: 15px;
+        }
+
+        .form-group {
+            display: flex;
+            flex-direction: column;
+            gap: 6px;
+            min-width: 0;
+        }
+
+        .form-group.full-width {
+            grid-column: 1 / -1;
+        }
+
+        .form-group label {
+            font-size: 13px;
+            font-weight: bold;
+            color: var(--text-main);
+        }
+
+        .input-field {
+            width: 100%;
+            min-width: 0;
+            padding: 10px 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 4px;
+            font-size: 14px;
+            outline: none;
+            background-color: #FFF;
+            color: var(--text-main);
+            transition: border-color 0.2s, box-shadow 0.2s;
+        }
+
+        .input-field:focus {
+            border-color: var(--primary-color);
+            box-shadow: 0 0 0 2px rgba(251, 69, 22, 0.12);
+        }
+
+        .input-field::placeholder {
+            color: #999;
+        }
+
+        .actions-container {
+            margin-top: 20px;
+            display: flex;
+            justify-content: flex-end;
+        }
+
+        .btn-primary {
+            background-color: var(--primary-color);
+            color: #FFF;
+            border: none;
+            padding: 10px 22px;
+            border-radius: 4px;
+            font-weight: bold;
+            cursor: pointer;
+            transition: background-color 0.2s;
+        }
+
+        .btn-primary:hover {
+            background-color: var(--primary-hover);
+        }
+
+        .btn-primary:focus-visible,
+        .user-nav a:focus-visible,
+        .user-actions a:focus-visible {
+            outline: 2px solid var(--primary-color);
+            outline-offset: 3px;
+        }
+
+        .ajax-response {
+            margin-top: 15px;
+            font-size: 14px;
+        }
+
+        .address-list {
+            display: flex;
+            flex-direction: column;
+            gap: 12px;
+        }
+
+        .empty-message {
+            padding: 18px;
+            background-color: #FAFAFA;
+            border: 1px dashed var(--border-color);
+            border-radius: 6px;
+            color: var(--text-muted);
+            font-size: 14px;
+            text-align: center;
+            line-height: 1.5;
+        }
+
+        .orders-container {
+            display: flex;
+            flex-direction: column;
+            gap: 15px;
+            min-width: 0;
+        }
+
+        .order-card {
+            border: 1px solid var(--border-color);
+            border-radius: 6px;
+            padding: 15px;
+            background: #FAFAFA;
+            min-width: 0;
+        }
+
+        .order-header {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            flex-wrap: wrap;
+            gap: 15px;
+            padding-bottom: 12px;
+            border-bottom: 1px solid var(--border-color);
+            margin-bottom: 12px;
+        }
+
+        .order-info {
+            display: flex;
+            flex-direction: column;
+            gap: 5px;
+        }
+
+        .order-label {
+            font-size: 13px;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+
+        .order-value {
+            font-size: 14px;
+            font-weight: bold;
+            color: var(--bg-dark);
+        }
+
+        .order-table-wrapper {
+            width: 100%;
+            overflow-x: auto;
+        }
+
+        .order-table {
+            width: 100%;
+            min-width: 500px;
+            border-collapse: collapse;
+            margin-bottom: 12px;
+            font-size: 14px;
+        }
+
+        .order-table th,
+        .order-table td {
+            padding: 10px;
+            text-align: left;
+            border-bottom: 1px solid var(--border-color);
+        }
+
+        .order-table th {
+            background-color: #F1F1F1;
+            color: var(--bg-dark);
+            font-weight: bold;
+        }
+
+        .order-footer {
+            display: flex;
+            justify-content: flex-end;
+            align-items: center;
+            gap: 10px;
+            padding-top: 10px;
+            flex-wrap: wrap;
+        }
+
+        .order-total-price {
+            font-size: 18px;
+            font-weight: bold;
+            color: var(--primary-color);
+        }
+
+        .badge {
+            display: inline-block;
+            width: fit-content;
+            padding: 4px 10px;
+            border-radius: 4px;
+            font-size: 12px;
+            font-weight: bold;
+            background-color: #EEEEEE;
+            color: #424242;
+        }
+
+        .badge-success {
+            background-color: #E8F5E9;
+            color: #2E7D32;
+        }
+
+        footer {
+            background-color: var(--bg-dark);
+            color: #FFF;
+            padding: 30px 5% 15px;
+            margin-top: 40px;
+        }
+
+        .footer-content {
+            display: grid;
+            grid-template-columns: repeat(3, minmax(0, 1fr));
+            gap: 30px;
+            margin-bottom: 20px;
+        }
+
+        .footer-column h4 {
+            color: var(--primary-color);
+            margin-bottom: 12px;
+            font-size: 16px;
+        }
+
+        .footer-column ul {
+            list-style: none;
+        }
+
+        .footer-column ul li {
+            font-size: 14px;
+            margin-bottom: 6px;
+            color: #CCC;
+            line-height: 1.5;
+        }
+
+        .footer-bottom {
+            border-top: 1px solid #333;
+            padding-top: 15px;
+            text-align: center;
+            font-size: 12px;
+            color: #888;
+        }
+
+        @media (max-width: 900px) {
+            .container {
+                padding: 20px 3%;
+                gap: 18px;
+            }
+
+            aside.user-sidebar {
+                width: 220px;
+                min-width: 220px;
+            }
+
+            .card-box {
+                padding: 20px;
+            }
+
+            .footer-content {
+                gap: 20px;
+            }
+        }
+
+        @media (max-width: 768px) {
+            header {
+                flex-direction: column;
+                align-items: stretch;
+                padding: 18px 5%;
+            }
+
+            .logo {
+                text-align: center;
+            }
+
+            .search-bar {
+                max-width: 100%;
+                width: 100%;
+            }
+
+            .user-actions {
+                justify-content: center;
+                flex-wrap: wrap;
+            }
+
+            .container {
+                flex-direction: column;
+                padding: 15px 4%;
+                gap: 18px;
+            }
+
+            aside.user-sidebar {
+                width: 100%;
+                min-width: 0;
+            }
+
+            .profile-summary {
+                padding-bottom: 15px;
+                margin-bottom: 15px;
+            }
+
+            .user-nav ul {
+                display: grid;
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+                gap: 5px;
+            }
+
+            .user-nav ul li {
+                margin-bottom: 0;
+            }
+
+            .user-nav ul li a {
+                text-align: center;
+                padding: 10px 6px;
+            }
+
+            .user-nav ul li a.logout-btn {
+                margin-top: 0;
+                padding-top: 10px;
+                border-top: none;
+            }
+
+            main.user-content {
+                width: 100%;
+            }
+
+            .form-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .form-group.full-width {
+                grid-column: auto;
+            }
+
+            .order-header {
+                align-items: flex-start;
+            }
+
+            .order-footer {
+                justify-content: space-between;
+            }
+
+            .footer-content {
+                grid-template-columns: repeat(2, minmax(0, 1fr));
+            }
+        }
+
+        @media (max-width: 480px) {
+            header {
+                padding: 15px 4%;
+            }
+
+            .search-bar button {
+                padding: 10px 12px;
+                font-size: 13px;
+            }
+
+            .user-actions {
+                gap: 12px;
+            }
+
+            .container {
+                padding: 12px 3%;
+            }
+
+            .card-box {
+                padding: 17px;
+            }
+
+            .card-title {
+                font-size: 17px;
+            }
+
+            .user-nav ul {
+                grid-template-columns: 1fr;
+            }
+
+            .user-nav ul li a {
+                text-align: left;
+            }
+
+            .actions-container {
+                justify-content: stretch;
+            }
+
+            .btn-primary {
+                width: 100%;
+            }
+
+            .order-header {
+                flex-direction: column;
+                gap: 12px;
+            }
+
+            .order-footer {
+                flex-direction: column;
+                align-items: flex-start;
+                gap: 5px;
+            }
+
+            .footer-content {
+                grid-template-columns: 1fr;
+                gap: 20px;
+            }
+        }
+    </style>
+</head>
+
+<body>
+
+    <header>
+        <a href="home.html" class="logo">LRC<span>1970</span></a>
+
+        <div class="search-bar">
+            <input
+                type="text"
+                placeholder="Buscar por nome da peça ou código..."
+                aria-label="Buscar produtos"
+            >
+            <button type="button">Buscar</button>
+        </div>
+
+        <div class="user-actions">
+            <a href="usuario.html">Minha Conta</a>
+            <a href="#" class="cart-btn">Carrinho (0)</a>
+        </div>
+    </header>
+
+    <div class="container">
+
+        <aside class="user-sidebar">
+
+            <div class="profile-summary">
+                <div class="avatar-placeholder">U</div>
+                <h3 id="user-display-name">Minha Conta</h3>
+                <span id="user-display-email">usuario@email.com</span>
+            </div>
+
+            <nav class="user-nav" aria-label="Menu da conta">
+                <ul>
+                    <li>
+                        <a href="#dados" class="active">Dados Pessoais</a>
+                    </li>
+                    <li>
+                        <a href="#enderecos">Meus Endereços</a>
+                    </li>
+                    <li>
+                        <a href="#pedidos">Meus Pedidos</a>
+                    </li>
+                    <li>
+                        <a href="#seguranca">Segurança</a>
+                    </li>
+                    <li>
+                        <a href="#" class="logout-btn">Sair da Conta</a>
+                    </li>
+                </ul>
+            </nav>
+
+        </aside>
+
+        <main class="user-content">
+
+            <section class="card-box" id="dados">
+
+                <h2 class="card-title">Dados Pessoais</h2>
+
+                <form id="forms_user_info" method="post">
+
+                    <div class="form-grid">
+
+                        <div class="form-group">
+                            <label for="user-nome">Nome</label>
+                            <input
+                                type="text"
+                                id="user-nome"
+                                name="nome"
+                                class="input-field"
+                                placeholder="Seu nome"
+                                autocomplete="given-name"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="user-sobrenome">Sobrenome</label>
+                            <input
+                                type="text"
+                                id="user-sobrenome"
+                                name="sobrenome"
+                                class="input-field"
+                                placeholder="Seu sobrenome"
+                                autocomplete="family-name"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="user-email">E-mail</label>
+                            <input
+                                type="email"
+                                id="user-email"
+                                name="email"
+                                class="input-field"
+                                placeholder="nome@exemplo.com"
+                                autocomplete="email"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="user-telefone">Telefone</label>
+                            <input
+                                type="tel"
+                                id="user-telefone"
+                                name="telefone"
+                                class="input-field"
+                                placeholder="(00) 00000-0000"
+                                autocomplete="tel"
+                            >
+                        </div>
+
+                    </div>
+
+                    <div class="actions-container">
+                        <button type="submit" id="btn-save-info" class="btn-primary">
+                            Salvar Dados Pessoais
+                        </button>
+                    </div>
+
+                    <div id="resp_info" class="ajax-response" aria-live="polite"></div>
+
+                </form>
+
+            </section>
+
+            <section class="card-box" id="enderecos">
+
+                <h2 class="card-title">Meus Endereços</h2>
+
+                <p class="section-description">
+                    Cadastre ou atualize o endereço utilizado nas suas compras.
+                </p>
+
+                <div id="address-list" class="address-list">
+                    <p class="empty-message" id="address-empty">
+                        Nenhum endereço cadastrado.
+                    </p>
+                </div>
+
+                <h3 class="form-subtitle">Adicionar endereço</h3>
+
+                <form id="forms_user_address" method="post">
+
+                    <div class="form-grid">
+
+                        <div class="form-group">
+                            <label for="user-cep">CEP</label>
+                            <input
+                                type="text"
+                                id="user-cep"
+                                name="cep"
+                                class="input-field"
+                                placeholder="00000-000"
+                                autocomplete="postal-code"
+                            >
+                        </div>
+
+                        <div class="form-group full-width">
+                            <label for="user-logradouro">Logradouro</label>
+                            <input
+                                type="text"
+                                id="user-logradouro"
+                                name="logradouro"
+                                class="input-field"
+                                placeholder="Rua, Avenida, etc."
+                                autocomplete="address-line1"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="user-numero">Número</label>
+                            <input
+                                type="text"
+                                id="user-numero"
+                                name="numero"
+                                class="input-field"
+                                placeholder="Número"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="user-complemento">Complemento</label>
+                            <input
+                                type="text"
+                                id="user-complemento"
+                                name="complemento"
+                                class="input-field"
+                                placeholder="Apto, bloco, etc."
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="user-bairro">Bairro</label>
+                            <input
+                                type="text"
+                                id="user-bairro"
+                                name="bairro"
+                                class="input-field"
+                                placeholder="Seu bairro"
+                                autocomplete="address-level3"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="user-cidade">Cidade</label>
+                            <input
+                                type="text"
+                                id="user-cidade"
+                                name="cidade"
+                                class="input-field"
+                                placeholder="Sua cidade"
+                                autocomplete="address-level2"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="user-estado">Estado</label>
+                            <input
+                                type="text"
+                                id="user-estado"
+                                name="estado"
+                                class="input-field"
+                                placeholder="UF"
+                                maxlength="2"
+                                autocomplete="address-level1"
+                            >
+                        </div>
+
+                    </div>
+
+                    <div class="actions-container">
+                        <button type="submit" id="btn-save-address" class="btn-primary">
+                            Salvar Endereço
+                        </button>
+                    </div>
+
+                    <div id="resp_address" class="ajax-response" aria-live="polite"></div>
+
+                </form>
+
+            </section>
+
+            <section class="card-box" id="pedidos">
+
+                <h2 class="card-title">Meus Pedidos</h2>
+
+                <div class="orders-container" id="orders-container">
+
+                    <p class="empty-message" id="orders-empty">
+                        Você ainda não realizou nenhum pedido.
+                    </p>
+
+                    <template id="order-template">
+
+                        <article class="order-card">
+
+                            <div class="order-header">
+
+                                <div class="order-info">
+                                    <span class="order-label">Número do Pedido</span>
+                                    <span class="order-value order-id"></span>
+                                </div>
+
+                                <div class="order-info">
+                                    <span class="order-label">Data</span>
+                                    <span class="order-value order-date"></span>
+                                </div>
+
+                                <div class="order-info">
+                                    <span class="order-label">Status</span>
+                                    <span class="badge order-status"></span>
+                                </div>
+
+                            </div>
+
+                            <div class="order-table-wrapper">
+
+                                <table class="order-table">
+
+                                    <thead>
+                                        <tr>
+                                            <th>Produto</th>
+                                            <th>Quantidade</th>
+                                            <th>Preço Unitário</th>
+                                            <th>Total</th>
+                                        </tr>
+                                    </thead>
+
+                                    <tbody class="order-items-list">
+                                    </tbody>
+
+                                </table>
+
+                            </div>
+
+                            <div class="order-footer">
+                                <span class="order-label">Valor Total do Pedido:</span>
+                                <span class="order-total-price order-total"></span>
+                            </div>
+
+                        </article>
+
+                    </template>
+
+                </div>
+
+            </section>
+
+            <section class="card-box" id="seguranca">
+
+                <h2 class="card-title">Segurança</h2>
+
+                <p class="section-description">
+                    Para alterar sua senha, informe a senha atual e escolha uma nova.
+                </p>
+
+                <form id="forms_pass" method="post">
+
+                    <div class="form-grid">
+
+                        <div class="form-group full-width">
+                            <label for="pass-current">Senha Atual</label>
+                            <input
+                                type="password"
+                                id="pass-current"
+                                name="current_password"
+                                class="input-field"
+                                placeholder="Digite sua senha atual"
+                                autocomplete="current-password"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="pass-new">Nova Senha</label>
+                            <input
+                                type="password"
+                                id="pass-new"
+                                name="new_password"
+                                class="input-field"
+                                placeholder="Digite a nova senha"
+                                autocomplete="new-password"
+                            >
+                        </div>
+
+                        <div class="form-group">
+                            <label for="pass-confirm">Confirmar Nova Senha</label>
+                            <input
+                                type="password"
+                                id="pass-confirm"
+                                name="confirm_password"
+                                class="input-field"
+                                placeholder="Confirme a nova senha"
+                                autocomplete="new-password"
+                            >
+                        </div>
+
+                    </div>
+
+                    <div class="actions-container">
+                        <button type="submit" id="password-btn" class="btn-primary">
+                            Atualizar Senha
+                        </button>
+                    </div>
+
+                    <div id="resp" class="ajax-response" aria-live="polite"></div>
+
+                </form>
+
+            </section>
+
+        </main>
+
+    </div>
+
+    <footer>
+
+        <div class="footer-content">
+
+            <div class="footer-column">
+                <h4>LRC1970 AutoPeças</h4>
+                <ul>
+                    <li>Informações claras, autenticidade e confiança para o seu veículo.</li>
+                </ul>
+            </div>
+
+            <div class="footer-column">
+                <h4>Formas de Pagamento</h4>
+                <ul>
+                    <li>Cartão de Crédito</li>
+                    <li>Cartão de Débito</li>
+                    <li>Pix</li>
+                </ul>
+            </div>
+
+            <div class="footer-column">
+                <h4>Opções de Entrega</h4>
+                <ul>
+                    <li>Correios</li>
+                    <li>Transportadoras</li>
+                    <li>Entrega Direta</li>
+                    <li>Motoboy (Uber Envios)</li>
+                </ul>
+            </div>
+
+        </div>
+
+        <div class="footer-bottom">
+            &copy; 2026 LRC1970 AutoPeças - Todos os direitos reservados.
+        </div>
+
+    </footer>
+
+</body>
+</html>
