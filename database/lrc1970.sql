@@ -3,15 +3,6 @@ SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 USE lrc1970;
 
-
--- AJUSTE DE ESTRUTURA (execute este arquivo uma única vez).
--- Mantém a redefinição de senha usando hash e prazo de expiração.
--- Em banco novo, cria as colunas após criar users.
--- Em banco existente, adiciona as colunas à tabela users já existente.
-ALTER TABLE users
-    ADD COLUMN reset_token_hash CHAR(64) NULL,
-    ADD COLUMN reset_token_expires_at DATETIME NULL;
-
 -- 1. USUÁRIOS
 CREATE TABLE if not exists
     users (
@@ -21,6 +12,8 @@ CREATE TABLE if not exists
         telefone VARCHAR(20),
         email VARCHAR(100) NOT NULL UNIQUE,
         senha VARCHAR(255) NOT NULL,
+        reset_token_hash CHAR(64) NULL,
+        reset_token_expires_at DATETIME NULL,
         tipo ENUM ('cliente', 'administrador') NOT NULL DEFAULT 'cliente'
     );
 
