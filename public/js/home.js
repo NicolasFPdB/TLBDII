@@ -30,24 +30,26 @@ document.addEventListener("DOMContentLoaded", () => {
       return;
     }
 
-    grid.innerHTML = productsArray
-      .map(
-        (item) => `
-      <a href="forms.html" style="text-decoration: none; color: inherit; display: block;">
-        <article class="product-card">
-          <div class="product-image"><img src="" alt="[Foto da Peça]"></div>
-          <div class="product-info">
-            <h3 class="product-title">${item["Descrição do Produto"]}</h3>
-            <span class="product-code">Cód: ${item["Código"]}</span>
-            <span class="product-stock">✓ Em Estoque</span>
-            <div class="product-price">R$ 45,90</div>
-            <button class="btn-buy">Comprar</button>
-          </div>
-        </article>
-      </a>
-    `,
-      )
-      .join("");
+    const escapeHtml = value => String(value ?? "").replace(/[&<>"']/g, ch => ({
+      "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;"
+    }[ch]));
+    grid.innerHTML = productsArray.map(item => {
+      const description = escapeHtml(item["Descrição do Produto"]);
+      const code = escapeHtml(Array.isArray(item["Código"]) ? item["Código"].join(", ") : item["Código"]);
+      const image = escapeHtml(item["Imagem"] || "");
+      return `
+        <a href="forms.html" style="text-decoration:none;color:inherit;display:block;">
+          <article class="product-card">
+            <div class="product-image"><img src="../public/${image}" alt="${description}" loading="lazy"></div>
+            <div class="product-info">
+              <h3 class="product-title">${description}</h3>
+              <span class="product-code">Cód: ${code}</span>
+              <span class="product-stock">Consulte disponibilidade</span>
+              <button class="btn-buy" type="button">Consultar</button>
+            </div>
+          </article>
+        </a>`;
+    }).join("");
   }
 
   // Filtragem combinada por Veículo e por Caixas de Seleção (Checkboxes) de Partes
