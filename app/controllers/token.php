@@ -1,9 +1,10 @@
 <?php
 
+// Middleware de Sessão e JSON
+    require_once __DIR__ . '/../middleware/session.php';
 // Conexão com a Database
     include_once('conection.php');
-
-    // Conexão de functions
+// Conexão de functions
     require_once('process.php');
 
 // Declaração - Variáveis
@@ -41,7 +42,7 @@ $status = [
                 $status['general'] = "ok";
                             
                 // Proteção - Brute Force
-                if (!RateLimitdB($pdo, $userIp, 'login', 5, 300)) {
+                if (!RateLimitDb($pdo, $userIp, 'login', 5, 300)) {
                 $message['check'] = "Muitas tentativas de troca de senha. Aguarde 5 minutos e tente novamente.";
                 $status['check']  = "error";
                 }

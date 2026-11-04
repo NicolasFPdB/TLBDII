@@ -1,10 +1,8 @@
 <?php
-if (session_status() === PHP_SESSION_NONE) {
-    session_start();
-}
-header('Content-Type: application/json; charset=utf-8');
-
-include_once('conection.php');
+// Middleware de Sessão e JSON
+    require_once __DIR__ . '/../middleware/session.php';
+// Conexão com a Database
+    include_once('conection.php');
 
 $userId = $_SESSION['user_id'] ?? 1; // ID fallback para testes
 $action = $_GET['action'] ?? $_POST['action'] ?? '';

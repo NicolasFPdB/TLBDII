@@ -1,7 +1,9 @@
 <?php
+
+// Middleware de Sessão e JSON
+    require_once __DIR__ . '/../middleware/session.php';
 // Conexão com a Database
     include_once('conection.php');
-
 // Conexão de functions
     require_once('process.php');
 

@@ -1,13 +1,13 @@
 // AJAX - Processamento dos formulários
 $(document).ready(function () {
-  $("#forms_log, #forms_cad, #forms_pass, #forms_token").on(
+  $("#forms_log, #forms_cad, #forms_pass, #forms_token, #forms_user_info, #forms_user_address, #forms_admin_product").on(
     "submit",
     function (e) {
       e.preventDefault();
 
       let $form = $(this);
       let dados = $form.serialize();
-      let $resp = $form.find(".resp");
+      let $resp = $form.find(".resp, #resp_info, #resp_address, #resp_admin");
       let formId = $form.attr("id");
       let url = "";
 
@@ -15,8 +15,6 @@ $(document).ready(function () {
       if (formId === "forms_pass") {
         let pass = $form.find("#pass-pass").val();
         let confirmPass = $form.find("#pass-confirm").val();
-
-        // Podes adicionar validações aqui se quiseres comparar as senhas antes de enviar
       }
 
       // Define o ficheiro PHP correspondente a cada formulário
@@ -33,6 +31,15 @@ $(document).ready(function () {
         case "forms_pass":
           url = "../app/controller/pass.php";
           break;
+        case "forms_user_info":
+          url = "../app/controller/usuario.php?action=update_info";
+          break;
+        case "forms_user_address":
+          url = "../app/controller/usuario.php?action=save_address";
+          break;
+        case "forms_admin_product":
+          url = "../app/controller/usuario.php?action=save_product";
+          break;
         default:
           break;
       }
@@ -45,18 +52,20 @@ $(document).ready(function () {
         success: function (response) {
           console.log(response);
           let $msg =
-            response.message.password ||
-            response.message.check ||
-            response.message.email ||
-            response.message.token ||
-            response.message.general ||
+            response.message?.password ||
+            response.message?.check ||
+            response.message?.email ||
+            response.message?.token ||
+            response.message?.general ||
+            response.message ||
             "Processado com sucesso!";
 
           if (
-            response.status.check === "ok" ||
-            response.status.general === "ok" ||
-            response.status.password === "ok" ||
-            response.status.token === "ok"
+            response.status?.check === "ok" ||
+            response.status?.general === "ok" ||
+            response.status?.password === "ok" ||
+            response.status?.token === "ok" ||
+            response.status === "ok"
           ) {
             $resp.html(
               "<p style='color:green; display:block'>" + $msg + "</p>",
@@ -78,6 +87,10 @@ $(document).ready(function () {
                 setTimeout(function () {
                   window.location.href = "home.html";
                 }, 1500);
+                break;
+              case "forms_user_info":
+              case "forms_user_address":
+              case "forms_admin_product":
                 break;
               default:
                 setTimeout(function () {
