@@ -3,6 +3,15 @@ SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 
 USE lrc1970;
 
+
+-- AJUSTE DE ESTRUTURA (execute este arquivo uma única vez).
+-- Mantém a redefinição de senha usando hash e prazo de expiração.
+-- Em banco novo, cria as colunas após criar users.
+-- Em banco existente, adiciona as colunas à tabela users já existente.
+ALTER TABLE users
+    ADD COLUMN reset_token_hash CHAR(64) NULL,
+    ADD COLUMN reset_token_expires_at DATETIME NULL;
+
 -- 1. USUÁRIOS
 CREATE TABLE if not exists
     users (
@@ -156,10 +165,3 @@ create table if not exists
         last_attempt datetime not null,
         unique key ip_acao (ip, acao)
 	);
-
--- Teste
-        insert into users (nome, sobrenome, telefone, email, senha, tipo) values (
-        "admin", "primeiro", "11111111111", "admin@lrc1970.com", "$2y$12$B41StvqXGbvdup6gBjS4deb4Vn6vAkrsr7qakXe4FUQDfXUBh1SOW", "administrador");
-        
--- Confirmação de sucesso do teste
-select * from users;

@@ -1,97 +1,41 @@
 <?php
 declare(strict_types=1);
-if (session_status() !== PHP_SESSION_ACTIVE)
-    session_start();
-header('Content-Type: application/json; charset=utf-8');
-
+require_once __DIR__ . '/../middleware/session_bootstrap.php';
 require_once __DIR__ . '/../config/config.php';
-
-$pdo = db();
 require_once __DIR__ . '/process.php';
 require_once __DIR__ . '/../services/mail.php';
+header('Content-Type: application/json; charset=utf-8');
 
-// Declaração - Variáveis
-$name = trim($_POST['name'] ?? "");
-$emailCheck = $_POST["email"] ?? "";
-$email = filter_var($emailCheck, FILTER_VALIDATE_EMAIL);
-$password = $_POST['password'] ?? "";
-$cep = trim($_POST['cep'] ?? "");
-$token = "";
-$userIp = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-
-// Declaração - objetos
-$message = [
-    'general' => "",
-    'check' => "",
-    'name' => "",
-    'email' => "",
-    'password' => "",
-    'token' => "",
-    'cep' => ""
-];
-$status = [
-    'general' => "",
-    'check' => "",
-    'name' => "",
-    'email' => "",
-    'password' => "",
-    'token' => "",
-    'cep' => ""
-];
-// CÓDIGO DO FORMULÁRIO DE NOVA SENHA/PASSWORD
-try {
-    $message['general'] = "Requisição de reset da senha efetuada com sucesso!";
-    $status['general'] = "ok";
-
-    if (!RateLimitDb($pdo, $userIp, 'reset-token', 3, 600)) {
-        $message['token'] = "Muitos pedidos de token enviados. Aguarde 10 minutos.";
-        $status['token'] = "error";
-        $message['check'] = "Bloqueado por excesso de tentativas.";
-        $status['check'] = "error";
-    }
-
-    if (!$email) {
-        $message['email'] = "E-mail inválido";
-        $status['email'] = "error";
-    }
-
-    // Select SQL - Check do User
-    $sql = "SELECT id FROM users WHERE email = :email";
-    $stmt = $pdo->prepare($sql);
-    $stmt->execute([':email' => $email]);
-    $user = $stmt->fetch(PDO::FETCH_ASSOC);
-
-    if ($user) {
-        $token = sprintf("%06d", random_int(0, 999999));
-        $expires = date('Y-m-d H:i:s', strtotime('+30 minutes'));
-
-        $sql = "UPDATE users SET token = :token, token_expiration = :expires WHERE email = :email";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([
-            ':token' => $token,
-            ':expires' => $expires,
-            ':email' => $email
-        ]);
-
-        TokenReset($email, $token);
-    }
-
-    $message["token"] = "Token enviado caso o usuário esteja cadastrado";
-    $status["token"] = "ok";
-
-} catch (PDOException $e) {
-    $message['general'] = "Falha nas requisições!";
-    $status['general'] = "error";
+function resetRequestResponse(string $status, string $message, int $code = 200): never
+{
+    http_response_code($code);
+    echo json_encode(['status' => $status, 'message' => $message], JSON_UNESCAPED_UNICODE);
+    exit;
 }
+try {
+    if ($_SERVER['REQUEST_METHOD'] !== 'POST') resetRequestResponse('error', 'Método não permitido.', 405);
+    $pdo = db();
+    $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
+    if (!RateLimitDb($pdo, $ip, 'reset-token', 3, 600)) resetRequestResponse('error', 'Muitos pedidos. Aguarde 10 minutos.', 429);
+    $email = filter_var(trim((string) ($_POST['email'] ?? '')), FILTER_VALIDATE_EMAIL);
+    if (!$email) resetRequestResponse('error', 'Informe um e-mail válido.', 422);
 
-// Output JSON
-$data = array(
-    'name' => $name,
-    'email' => $email,
-    'cep' => $cep,
-    'status' => $status,
-    'message' => $message
-);
-
-echo json_encode($data, JSON_UNESCAPED_UNICODE);
-?>
+    // Resposta igual para contas existentes e inexistentes, evitando enumeração.
+    $stmt = $pdo->prepare('SELECT id FROM users WHERE email = :email LIMIT 1');
+    $stmt->execute([':email' => $email]);
+    $user = $stmt->fetch();
+    if ($user) {
+        $token = (string) random_int(100000, 999999);
+        $hash = hash('sha256', $token);
+        $expires = (new DateTimeImmutable('+30 minutes'))->format('Y-m-d H:i:s');
+        $save = $pdo->prepare('UPDATE users SET reset_token_hash=:hash, reset_token_expires_at=:expires WHERE id=:id');
+        $save->execute([':hash' => $hash, ':expires' => $expires, ':id' => $user['id']]);
+        if (!TokenReset($email, $token)) {
+            error_log('Solicitação de redefinição registrada, mas o e-mail não pôde ser enviado.');
+        }
+    }
+    resetRequestResponse('ok', 'Se o e-mail estiver cadastrado, você receberá um código de redefinição.');
+} catch (Throwable $e) {
+    error_log('Solicitação de reset: ' . $e->getMessage());
+    resetRequestResponse('error', 'Não foi possível processar a solicitação.', 500);
+}

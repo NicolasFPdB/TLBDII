@@ -6,7 +6,12 @@ require_once __DIR__ . '/../config/config.php';
 $pdo = db();
 header('Content-Type: application/json; charset=utf-8');
 
-$userId = (int) $_SESSION['user_id'];
+$userId = (int) ($_SESSION['user_id'] ?? 0);
+if ($userId <= 0) {
+    http_response_code(401);
+    echo json_encode(['status' => 'error', 'message' => 'Sessão inválida. Faça login novamente.'], JSON_UNESCAPED_UNICODE);
+    exit;
+}
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
 $isAdmin = ($_SESSION['user_type'] ?? '') === 'administrador';
 
@@ -34,26 +39,18 @@ try {
             respond(['status' => 'ok', 'user' => $user]);
 
         case 'update_info':
-            $nome = trim($_POST['nome'] ?? '');
-            $descricao = trim($_POST['descricao'] ?? '');
+            $nome = trim((string) ($_POST['nome'] ?? ''));
             $sobrenome = trim((string) ($_POST['sobrenome'] ?? ''));
             $email = filter_var(trim((string) ($_POST['email'] ?? '')), FILTER_VALIDATE_EMAIL);
             $telefone = trim((string) ($_POST['telefone'] ?? ''));
-            if ($nome === '' || $sobrenome === '' || !$email)
+            if ($nome === '' || strlen($nome) > 50 || $sobrenome === '' || strlen($sobrenome) > 100 || !$email || strlen($email) > 100)
                 respond(['status' => 'error', 'message' => 'Nome, sobrenome e e-mail válido são obrigatórios.'], 422);
-            $check = $pdo->prepare('SELECT id FROM users WHERE email = :email AND id <> :id');
+            if (strlen($telefone) > 20)
+                respond(['status' => 'error', 'message' => 'Telefone inválido.'], 422);
+            $check = $pdo->prepare('SELECT id FROM users WHERE email = :email AND id <> :id LIMIT 1');
             $check->execute([':email' => $email, ':id' => $userId]);
-            if ($check->fetch())
-                respond(['status' => 'error', 'message' => 'Este e-mail já está em uso.'], 409);
-            $stmt = $pdo->prepare(
-                'UPDATE produtos
-     SET codigo = :codigo,
-         nome = :nome,
-         descricao = :descricao,
-         preco = :preco,
-         estoque = :estoque
-     WHERE id_produto = :id'
-            );
+            if ($check->fetch()) respond(['status' => 'error', 'message' => 'Este e-mail já está em uso.'], 409);
+            $stmt = $pdo->prepare('UPDATE users SET nome=:nome, sobrenome=:sobrenome, email=:email, telefone=:telefone WHERE id=:id');
             $stmt->execute([':nome' => $nome, ':sobrenome' => $sobrenome, ':email' => $email, ':telefone' => $telefone, ':id' => $userId]);
             respond(['status' => 'ok', 'message' => 'Dados atualizados com sucesso!']);
 
@@ -74,7 +71,7 @@ try {
                 respond(['status' => 'error', 'message' => 'Preencha todos os campos do endereço corretamente.'], 422);
             }
             $pdo->beginTransaction();
-            $cepStmt = $pdo->prepare('INSERT INTO ceps (cep, logradouro, bairro, cidade, estado) VALUES (:cep,:logradouro,:bairro,:cidade,:estado) ON DUPLICATE KEY UPDATE logradouro=VALUES(logradouro), bairro=VALUES(bairro), cidade=VALUES(cidade), estado=VALUES(estado)');
+            $cepStmt = $pdo->prepare('INSERT INTO ceps (cep, logradouro, bairro, cidade, estado) VALUES (:cep,:logradouro,:bairro,:cidade,:estado) ON DUPLICATE KEY UPDATE cep=VALUES(cep)');
             $cepStmt->execute([':cep' => $cep, ':logradouro' => $logradouro, ':bairro' => $bairro, ':cidade' => $cidade, ':estado' => $estado]);
             $existing = $pdo->prepare('SELECT id_endereco FROM enderecos WHERE id_usuario=:id AND cep=:cep AND numero=:numero LIMIT 1');
             $existing->execute([':id' => $userId, ':cep' => $cep, ':numero' => $numero]);
@@ -96,35 +93,41 @@ try {
         case 'sync_json':
             requireAdmin($isAdmin);
             $jsonPath = __DIR__ . '/../../public/assets/data/data.json';
+            if (!is_file($jsonPath) || !is_readable($jsonPath)) respond(['status' => 'error', 'message' => 'Arquivo de produtos não encontrado.'], 500);
             $items = json_decode((string) file_get_contents($jsonPath), true);
-            if (!is_array($items))
-                respond(['status' => 'error', 'message' => 'Arquivo de produtos inválido.'], 422);
-            $stmt = $pdo->prepare(
-                'INSERT INTO produtos
-     (codigo, nome, descricao, preco, estoque)
-     VALUES
-     (:codigo, :nome, :descricao, :preco, :estoque)'
-            );
-            $count = 0;
+            if (!is_array($items) || json_last_error() !== JSON_ERROR_NONE) respond(['status' => 'error', 'message' => 'Arquivo de produtos inválido.'], 422);
+
+            $exists = $pdo->prepare('SELECT id_produto FROM produtos WHERE codigo=:codigo LIMIT 1');
+            $insert = $pdo->prepare('INSERT INTO produtos (codigo, nome, descricao, preco, estoque) VALUES (:codigo, :nome, :descricao, 0, 0)');
+            $seen = [];
+            $inserted = 0;
+            $ignored = 0;
+            $pdo->beginTransaction();
             foreach ($items as $item) {
+                if (!is_array($item)) continue;
                 $rawCodes = $item['Código'] ?? [];
                 $codes = is_array($rawCodes) ? $rawCodes : [$rawCodes];
-                $name = trim((string) ($item['Descrição do Produto'] ?? 'Produto sem descrição'));
+                $description = trim((string) ($item['Descrição do Produto'] ?? 'Produto sem descrição'));
+                if ($description === '') $description = 'Produto sem descrição';
                 foreach ($codes as $rawCode) {
                     $code = trim((string) $rawCode);
-                    if ($code === '' || strlen($code) > 30)
-                        continue;
-                    $stmt->execute([':codigo' => $code, ':nome' => substr($name, 0, 150), ':descricao' => $name, ':preco' => 0, ':estoque' => 0]);
-                    $count++;
+                    if ($code === '' || strlen($code) > 30 || isset($seen[$code])) { $ignored++; continue; }
+                    $seen[$code] = true;
+                    $exists->execute([':codigo' => $code]);
+                    if ($exists->fetch()) { $ignored++; continue; }
+                    $insert->execute([':codigo' => $code, ':nome' => substr($description, 0, 150), ':descricao' => $description]);
+                    $inserted++;
                 }
             }
-            respond(['status' => 'ok', 'message' => "Sincronização concluída: {$count} códigos processados. Preço e estoque permanecem zerados até serem informados no cadastro do produto."]);
+            $pdo->commit();
+            respond(['status' => 'ok', 'message' => "Sincronização concluída: {$inserted} códigos inseridos e {$ignored} ignorados por duplicidade ou invalidade. Preço e estoque ficaram zerados e precisam ser cadastrados pelo administrador."]);
 
         case 'save_product':
             requireAdmin($isAdmin);
             $id = (int) ($_POST['id'] ?? 0);
             $codigo = trim((string) ($_POST['codigo'] ?? ''));
-            $nome = trim((string) ($_POST['descricao'] ?? ''));
+            $nome = trim((string) ($_POST['nome'] ?? $_POST['descricao'] ?? ''));
+            $descricao = trim((string) ($_POST['descricao_detalhada'] ?? $nome));
             $preco = filter_var($_POST['preco'] ?? null, FILTER_VALIDATE_FLOAT);
             $estoque = filter_var($_POST['estoque'] ?? null, FILTER_VALIDATE_INT);
 
@@ -148,14 +151,19 @@ try {
                     'message' => 'Estoque inválido.'
                 ], 422);
             }
-            if ($codigo === '' || strlen($codigo) > 30 || $nome === '' || $preco === false || $preco < 0 || $estoque === false || $estoque < 0)
+            if ($codigo === '' || strlen($codigo) > 30 || $nome === '' || strlen($nome) > 150 || $preco === false || $preco < 0 || $estoque === false || $estoque < 0)
                 respond(['status' => 'error', 'message' => 'Informe código, descrição, preço e estoque válidos.'], 422);
             if ($id > 0) {
-                $stmt = $pdo->prepare('UPDATE produtos SET codigo=:codigo,nome=:nome,preco=:preco,estoque=:estoque WHERE id_produto=:id');
-                $stmt->execute([':codigo' => $codigo, ':nome' => $nome, ':preco' => $preco, ':estoque' => $estoque, ':id' => $id]);
+                $stmt = $pdo->prepare('UPDATE produtos SET codigo=:codigo,nome=:nome,descricao=:descricao,preco=:preco,estoque=:estoque WHERE id_produto=:id');
+                $stmt->execute([':codigo' => $codigo, ':nome' => $nome, ':descricao' => $descricao, ':preco' => $preco, ':estoque' => $estoque, ':id' => $id]);
+                if ($stmt->rowCount() === 0) {
+                    $existsProduct = $pdo->prepare('SELECT id_produto FROM produtos WHERE id_produto=:id');
+                    $existsProduct->execute([':id' => $id]);
+                    if (!$existsProduct->fetch()) respond(['status' => 'error', 'message' => 'Produto não encontrado.'], 404);
+                }
             } else {
-                $stmt = $pdo->prepare('INSERT INTO produtos (codigo,nome,preco,estoque) VALUES (:codigo,:nome,:preco,:estoque)');
-                $stmt->execute([':codigo' => $codigo, ':nome' => $nome, ':preco' => $preco, ':estoque' => $estoque]);
+                $stmt = $pdo->prepare('INSERT INTO produtos (codigo,nome,descricao,preco,estoque) VALUES (:codigo,:nome,:descricao,:preco,:estoque)');
+                $stmt->execute([':codigo' => $codigo, ':nome' => $nome, ':descricao' => $descricao, ':preco' => $preco, ':estoque' => $estoque]);
             }
             respond(['status' => 'ok', 'message' => 'Produto salvo com sucesso!']);
 
@@ -216,6 +224,11 @@ try {
         default:
             respond(['status' => 'error', 'message' => 'Ação inválida.'], 400);
     }
+} catch (PDOException $e) {
+    if ($pdo->inTransaction()) $pdo->rollBack();
+    if ($e->getCode() === '23000') respond(['status' => 'error', 'message' => 'O código do produto já está cadastrado.'], 409);
+    error_log('Controller usuario: ' . $e->getMessage());
+    respond(['status' => 'error', 'message' => 'Não foi possível concluir a operação. Verifique os dados e tente novamente.'], 500);
 } catch (Throwable $e) {
     if ($pdo->inTransaction())
         $pdo->rollBack();

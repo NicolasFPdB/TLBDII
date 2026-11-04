@@ -1,27 +1,23 @@
 <?php
-session_start();
-
-$_SESSION = [];
-
-if (ini_get('session.use_cookies')) {
-    $params = session_get_cookie_params();
-
-    setcookie(
-        session_name(),
-        '',
-        time() - 42000,
-        $params['path'],
-        $params['domain'],
-        $params['secure'],
-        $params['httponly']
-    );
+declare(strict_types=1);
+require_once __DIR__ . '/../middleware/session_bootstrap.php';
+header('Content-Type: application/json; charset=utf-8');
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    http_response_code(405);
+    echo json_encode(['status' => 'error', 'message' => 'Método não permitido.']);
+    exit;
 }
-
+$_SESSION = [];
+$params = session_get_cookie_params();
+if (ini_get('session.use_cookies')) {
+    setcookie(session_name(), '', [
+        'expires' => time() - 42000,
+        'path' => $params['path'],
+        'domain' => $params['domain'],
+        'secure' => $params['secure'],
+        'httponly' => $params['httponly'],
+        'samesite' => 'Lax',
+    ]);
+}
 session_destroy();
-
-header('Content-Type: application/json');
-
-echo json_encode([
-    'status' => 'ok',
-    'message' => 'Sessão encerrada.'
-]);
+echo json_encode(['status' => 'ok', 'message' => 'Sessão encerrada.'], JSON_UNESCAPED_UNICODE);

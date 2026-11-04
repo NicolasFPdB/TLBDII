@@ -3,39 +3,29 @@
 class Carrinho {
   constructor(todosProdutos = []) {
     this.todosProdutos = todosProdutos;
-    // Carrega os itens salvos no localStorage ou usa os 2 primeiros do JSON como exemplo
+    // O catálogo JSON não possui IDs nem preços: usa o primeiro código como chave local.
     this.itens = this.carregarCarrinhoSalvo();
     this.element = null;
   }
 
   carregarCarrinhoSalvo() {
-    const cartStorage = JSON.parse(localStorage.getItem("cart") || "[]");
-
-    if (cartStorage.length > 0) {
-      return cartStorage.map((itemStorage) => {
-        const produtoOriginal =
-          this.todosProdutos.find((p) => p.id === itemStorage.id) || {};
-        return {
-          ...produtoOriginal,
-          quantidade: itemStorage.quantity || 1,
-          preco: itemStorage.preco || 45.9, // Preço padrão caso não exista no JSON
-        };
+    let cartStorage = [];
+    try { cartStorage = JSON.parse(localStorage.getItem("cart") || "[]"); } catch { cartStorage = []; }
+    if (!Array.isArray(cartStorage)) return [];
+    return cartStorage.map((stored) => {
+      const product = this.todosProdutos.find((p) => {
+        const codes = Array.isArray(p["Código"]) ? p["Código"] : [p["Código"]];
+        return codes.map(String).includes(String(stored.id));
       });
-    }
-
-    // Caso o localStorage esteja vazio, carrega 2 itens de demonstração
-    return this.todosProdutos.slice(0, 2).map((produto) => ({
-      ...produto,
-      quantidade: 1,
-      preco: 45.9,
-    }));
+      if (!product) return null;
+      return { ...product, id: String(stored.id), quantidade: Math.max(1, Math.min(99, parseInt(stored.quantity, 10) || 1)), preco: null };
+    }).filter(Boolean);
   }
 
   salvarStorage() {
     const cartData = this.itens.map((item) => ({
       id: item.id,
       quantity: item.quantidade,
-      preco: item.preco,
     }));
     localStorage.setItem("cart", JSON.stringify(cartData));
   }
@@ -73,10 +63,8 @@ class Carrinho {
   }
 
   calcularSubtotal() {
-    return this.itens.reduce(
-      (total, item) => total + item.preco * item.quantidade,
-      0,
-    );
+    // Sem preço cadastrado/validado no servidor, não inventa valores no navegador.
+    return null;
   }
 
   createElement() {
@@ -90,7 +78,6 @@ class Carrinho {
       this.element = this.createElement();
     }
 
-    const subtotalGeral = this.calcularSubtotal();
     const totalItens = this.itens.reduce(
       (acc, item) => acc + item.quantidade,
       0,
@@ -100,31 +87,35 @@ class Carrinho {
       this.itens.length > 0
         ? this.itens
             .map((item) => {
-              const subtotalItem = (item.preco * item.quantidade).toFixed(2);
               const codigos = Array.isArray(item["Código"])
                 ? item["Código"].join(", ")
                 : item["Código"];
 
+              const escapeHtml = (value) => String(value ?? "").replace(/[&<>"']/g, (ch) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[ch]));
+              const description = escapeHtml(item["Descrição do Produto"]);
+              const codeText = escapeHtml(codigos);
+              const image = String(item.Imagem || "").replace(/^\/+/, "");
+              const safeImage = /^assets\/images\/[a-zA-Z0-9._-]+$/.test(image) ? image : "assets/images/logo.png";
               return `
-            <article class="cart-item" data-id="${item.id}">
+            <article class="cart-item" data-id="${escapeHtml(item.id)}">
                 <div class="cart-item-product">
                     <div class="product-image">
-                      <img src="../public/${item.Imagem || "assets/images/placeholder.png"}" alt="${item["Descrição do Produto"]}">
+                      <img src="${safeImage}" alt="${description}">
                     </div>
                     <div class="product-info">
-                        <h3 class="product-title">${item["Descrição do Produto"]}</h3>
-                        <span class="product-code">Cód: ${codigos}</span>
+                        <h3 class="product-title">${description}</h3>
+                        <span class="product-code">Cód: ${codeText}</span>
                         <span class="product-compatibility">Aplica-se: Linha Automotiva</span>
-                        <span class="product-stock">✓ Em Estoque</span>
+                        <span class="product-stock">Consulte disponibilidade</span>
                     </div>
                 </div>
-                <div class="cart-price">R$ ${item.preco.toFixed(2).replace(".", ",")}</div>
+                <div class="cart-price">Consulte preço</div>
                 <div class="qty-control">
                     <button type="button" class="btn-decrease" aria-label="Diminuir">−</button>
                     <input type="number" class="input-qty" value="${item.quantidade}" min="1">
                     <button type="button" class="btn-increase" aria-label="Aumentar">+</button>
                 </div>
-                <div class="cart-subtotal">R$ ${subtotalItem.replace(".", ",")}</div>
+                <div class="cart-subtotal">—</div>
                 <button type="button" class="btn-remove" aria-label="Remover item">✕</button>
             </article>
         `;
@@ -174,15 +165,13 @@ class Carrinho {
                 </div>
 
                 <ul class="summary-lines">
-                    <li><span>Subtotal (${totalItens} ${totalItens === 1 ? "item" : "itens"})</span><span>R$ ${subtotalGeral.toFixed(2).replace(".", ",")}</span></li>
+                    <li><span>Itens (${totalItens})</span><span>Preço sob consulta</span></li>
                     <li><span>Frete</span><span>A calcular</span></li>
-                    <li><span>Desconto</span><span>− R$ 0,00</span></li>
-                    <li class="summary-total"><span>Total</span><span>R$ ${subtotalGeral.toFixed(2).replace(".", ",")}</span></li>
+                    <li class="summary-total"><span>Total</span><span>Indisponível até validar preços</span></li>
                 </ul>
 
-                <button type="button" class="btn-buy btn-checkout" ${this.itens.length === 0 ? "disabled" : ""}>Finalizar Compra</button>
-
-                <p class="summary-payments">Aceitamos: Cartão de Crédito, Cartão de Débito e Pix</p>
+                <button type="button" class="btn-buy btn-checkout" disabled title="O checkout será habilitado após integração de preços, estoque e pedidos no servidor">Finalizar Compra</button>
+                <p class="summary-payments">O checkout ainda não está disponível. Nenhuma compra será enviada.</p>
             </aside>
         `;
 
@@ -193,7 +182,7 @@ class Carrinho {
     // Aumentar quantidade
     this.element.querySelectorAll(".btn-increase").forEach((btn) => {
       btn.addEventListener("click", (e) => {
-        const id = e.target.closest(".cart-item").dataset.id;
+        const id = e.currentTarget.closest(".cart-item").dataset.id;
         this.alterarQuantidade(id, 1);
       });
     });
@@ -201,7 +190,7 @@ class Carrinho {
     // Diminuir quantidade
     this.element.querySelectorAll(".btn-decrease").forEach((btn) => {
       btn.addEventListener("click", (e) => {
-        const id = e.target.closest(".cart-item").dataset.id;
+        const id = e.currentTarget.closest(".cart-item").dataset.id;
         this.alterarQuantidade(id, -1);
       });
     });
@@ -209,7 +198,7 @@ class Carrinho {
     // Alterar quantidade manualmente pelo input
     this.element.querySelectorAll(".input-qty").forEach((input) => {
       input.addEventListener("change", (e) => {
-        const id = e.target.closest(".cart-item").dataset.id;
+        const id = e.currentTarget.closest(".cart-item").dataset.id;
         this.definirQuantidade(id, e.target.value);
       });
     });
@@ -217,7 +206,7 @@ class Carrinho {
     // Remover item individual
     this.element.querySelectorAll(".btn-remove").forEach((btn) => {
       btn.addEventListener("click", (e) => {
-        const id = e.target.closest(".cart-item").dataset.id;
+        const id = e.currentTarget.closest(".cart-item").dataset.id;
         this.removerItem(id);
       });
     });
@@ -232,7 +221,7 @@ class Carrinho {
 
 async function loadCartData() {
   try {
-    const response = await fetch("../public/assets/data/data.json");
+    const response = await fetch("assets/data/data.json");
 
     if (!response.ok) {
       throw new Error(`Erro ao carregar o ficheiro: ${response.status}`);
