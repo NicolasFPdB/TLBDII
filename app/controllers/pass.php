@@ -1,35 +1,93 @@
 <?php
 declare(strict_types=1);
-if (session_status() !== PHP_SESSION_ACTIVE) session_start();
+if (session_status() !== PHP_SESSION_ACTIVE)
+    session_start();
 header('Content-Type: application/json; charset=utf-8');
 require_once __DIR__ . '/../config/conection.php';
 require_once __DIR__ . '/process.php';
 
-$out = ['status' => 'error', 'message' => 'Não foi possível processar a solicitação.'];
-try {
-    $ip = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
-    if (!RateLimitDb($pdo, $ip, 'alteracao_senha', 5, 600)) throw new RuntimeException('Muitas tentativas. Aguarde 10 minutos.');
+// Declaração - Variáveis
+$name = trim($_POST['name'] ?? "");
+$emailCheck = $_POST["email"] ?? "";
+$email = filter_var($emailCheck, FILTER_VALIDATE_EMAIL);
+$password = $_POST['password'] ?? "";
+$cep = trim($_POST['cep'] ?? "");
+$token = "";
+$userIp = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
 
-    if (!empty($_SESSION['logged_in']) && !empty($_SESSION['user_id'])) {
-        $current = (string)($_POST['current_password'] ?? '');
-        $new = (string)($_POST['new_password'] ?? '');
-        $confirm = (string)($_POST['confirm_password'] ?? '');
-        if (strlen($new) < 8) throw new RuntimeException('A nova senha deve conter no mínimo 8 caracteres.');
-        if (!hash_equals($new, $confirm)) throw new RuntimeException('A confirmação da senha não corresponde.');
-        $stmt = $pdo->prepare('SELECT senha FROM users WHERE id = :id');
-        $stmt->execute([':id' => (int)$_SESSION['user_id']]);
-        $row = $stmt->fetch();
-        if (!$row || !password_verify($current, $row['senha'])) throw new RuntimeException('Senha atual incorreta.');
-        $update = $pdo->prepare('UPDATE users SET senha = :senha WHERE id = :id');
-        $update->execute([':senha' => password_hash($new, PASSWORD_DEFAULT), ':id' => (int)$_SESSION['user_id']]);
-        $out = ['status' => 'ok', 'message' => 'Senha alterada com sucesso.'];
-    } else {
-        $email = filter_var(trim((string)($_POST['email'] ?? '')), FILTER_VALIDATE_EMAIL);
-        if (!$email) throw new RuntimeException('Informe um e-mail válido.');
-        $out = ['status' => 'error', 'message' => 'A recuperação por e-mail está indisponível: o banco atual não possui armazenamento de tokens.'];
+// Declaração - objetos
+$message = [
+    'general' => "",
+    'check' => "",
+    'name' => "",
+    'email' => "",
+    'password' => "",
+    'token' => "",
+    'cep' => ""
+];
+$status = [
+    'general' => "",
+    'check' => "",
+    'name' => "",
+    'email' => "",
+    'password' => "",
+    'token' => "",
+    'cep' => ""
+];
+// CÓDIGO DO FORMULÁRIO DE NOVA SENHA/PASSWORD
+try {
+    $message['general'] = "Requisição de reset da senha efetuada com sucesso!";
+    $status['general'] = "ok";
+
+    if (!RateLimitDb($pdo, $userIp, 'reset-token', 3, 600)) {
+        $message['token'] = "Muitos pedidos de token enviados. Aguarde 10 minutos.";
+        $status['token'] = "error";
+        $message['check'] = "Bloqueado por excesso de tentativas.";
+        $status['check'] = "error";
     }
-} catch (Throwable $e) {
-    if (!($e instanceof RuntimeException)) error_log('Alteração de senha: ' . $e->getMessage());
-    $out['message'] = $e instanceof RuntimeException ? $e->getMessage() : 'Erro interno ao atualizar a senha.';
+
+    if (!$email) {
+        $message['email'] = "E-mail inválido";
+        $status['email'] = "error";
+    }
+
+    // Select SQL - Check do User
+    $sql = "SELECT id FROM users WHERE email = :email";
+    $stmt = $pdo->prepare($sql);
+    $stmt->execute([':email' => $email]);
+    $user = $stmt->fetch(PDO::FETCH_ASSOC);
+
+    if ($user) {
+        $token = sprintf("%06d", random_int(0, 999999));
+        $expires = date('Y-m-d H:i:s', strtotime('+30 minutes'));
+
+        $sql = "UPDATE users SET token = :token, token_expiration = :expires WHERE email = :email";
+        $stmt = $pdo->prepare($sql);
+        $stmt->execute([
+            ':token' => $token,
+            ':expires' => $expires,
+            ':email' => $email
+        ]);
+
+        TokenReset($email, $token);
+    }
+
+    $message["token"] = "Token enviado caso o usuário esteja cadastrado";
+    $status["token"] = "ok";
+
+} catch (PDOException $e) {
+    $message['general'] = "Falha nas requisições!";
+    $status['general'] = "error";
 }
-echo json_encode($out, JSON_UNESCAPED_UNICODE);
+
+// Output JSON
+$data = array(
+    'name' => $name,
+    'email' => $email,
+    'cep' => $cep,
+    'status' => $status,
+    'message' => $message
+);
+
+echo json_encode($data, JSON_UNESCAPED_UNICODE);
+?>

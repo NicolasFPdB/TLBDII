@@ -1,10 +1,6 @@
 <?php
 declare(strict_types=1);
 
-/**
- * Limita tentativas usando a coluna `acao` existente no schema.
- * Em caso de erro, falha fechado: não libera a operação.
- */
 function RateLimitDb(PDO $pdo, string $ip, string $action, int $maxAttempts = 5, int $seconds = 300): bool
 {
     try {
@@ -19,7 +15,7 @@ function RateLimitDb(PDO $pdo, string $ip, string $action, int $maxAttempts = 5,
                 $update->execute([':now' => $now, ':id' => $record['id']]);
                 return true;
             }
-            if ((int)$record['attempts'] >= $maxAttempts) {
+            if ((int) $record['attempts'] >= $maxAttempts) {
                 return false;
             }
             $update = $pdo->prepare('UPDATE rate_limits SET attempts = attempts + 1, last_attempt = :now WHERE id = :id');
