@@ -31,3 +31,19 @@ function RateLimitDb(PDO $pdo, string $ip, string $action, int $maxAttempts = 5,
         return false;
     }
 }
+function ResetRateLimit(
+    PDO $pdo,
+    string $ip,
+    string $action
+): void {
+
+    $stmt = $pdo->prepare(
+        'DELETE FROM rate_limits
+         WHERE ip = :ip AND acao = :acao'
+    );
+
+    $stmt->execute([
+        ':ip' => $ip,
+        ':acao' => $action
+    ]);
+}

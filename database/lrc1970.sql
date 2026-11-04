@@ -4,7 +4,7 @@ SET utf8mb4 COLLATE utf8mb4_unicode_ci;
 USE lrc1970;
 
 -- 1. USUÁRIOS
-CREATE TABLE
+CREATE TABLE if not exists
     users (
         id INT AUTO_INCREMENT PRIMARY KEY,
         nome VARCHAR(50) NOT NULL,
@@ -16,14 +16,14 @@ CREATE TABLE
     );
 
 -- 2. CATEGORIAS
-CREATE TABLE
+CREATE TABLE if not exists
     categorias (
         id_categoria INT AUTO_INCREMENT PRIMARY KEY,
         nome VARCHAR(100) NOT NULL UNIQUE
     );
 
 -- 3. CEPS (Isolamento de dependências transitivas - 3FN)
-CREATE TABLE
+CREATE TABLE if not exists
     ceps (
         cep VARCHAR(9) PRIMARY KEY,
         logradouro VARCHAR(150) NOT NULL,
@@ -33,7 +33,7 @@ CREATE TABLE
     );
 
 -- 4. ENDEREÇOS DE USUÁRIOS
-CREATE TABLE
+CREATE TABLE if not exists
     enderecos (
         id_endereco INT AUTO_INCREMENT PRIMARY KEY,
         id_usuario INT NOT NULL,
@@ -45,7 +45,7 @@ CREATE TABLE
     );
 
 -- 5. VEÍCULOS
-CREATE TABLE
+CREATE TABLE if not exists
     veiculos (
         id_veiculo INT AUTO_INCREMENT PRIMARY KEY,
         marca VARCHAR(50) NOT NULL,
@@ -55,7 +55,7 @@ CREATE TABLE
     );
 
 -- 6. PRODUTOS
-CREATE TABLE
+CREATE TABLE if not exists
     produtos (
         id_produto INT AUTO_INCREMENT PRIMARY KEY,
         codigo VARCHAR(30) NOT NULL UNIQUE,
@@ -68,7 +68,7 @@ CREATE TABLE
     );
 
 -- 7. COMPATIBILIDADE
-CREATE TABLE
+CREATE TABLE if not exists
     compatibilidades (
         id_produto INT NOT NULL,
         id_veiculo INT NOT NULL,
@@ -78,7 +78,7 @@ CREATE TABLE
     );
 
 -- 8. CARRINHOS
-CREATE TABLE
+CREATE TABLE if not exists
     carrinhos (
         id_carrinho INT AUTO_INCREMENT PRIMARY KEY,
         id_usuario INT NOT NULL,
@@ -88,7 +88,7 @@ CREATE TABLE
     );
 
 -- 9. ITENS DO CARRINHO
-CREATE TABLE
+CREATE TABLE if not exists
     itens_carrinho (
         id_item INT AUTO_INCREMENT PRIMARY KEY,
         id_carrinho INT NOT NULL,
@@ -100,7 +100,7 @@ CREATE TABLE
     );
 
 -- 10. PEDIDOS
-CREATE TABLE
+CREATE TABLE if not exists
     pedidos (
         id_pedido INT AUTO_INCREMENT PRIMARY KEY,
         id_usuario INT NOT NULL,
@@ -121,7 +121,7 @@ CREATE TABLE
     );
 
 -- 11. ITENS DO PEDIDO
-CREATE TABLE
+CREATE TABLE if not exists
     itens_pedido (
         id_item_pedido INT AUTO_INCREMENT PRIMARY KEY,
         id_pedido INT NOT NULL,
@@ -133,7 +133,7 @@ CREATE TABLE
     );
 
 -- 12. MOVIMENTAÇÕES DE ESTOQUE (HISTÓRICO)
-CREATE TABLE
+CREATE TABLE if not exists
     movimentacoes_estoque (
         id_movimentacao INT AUTO_INCREMENT PRIMARY KEY,
         id_produto INT NOT NULL,
@@ -147,7 +147,7 @@ CREATE TABLE
     );
     
 -- 13. Tabela de controle de tentativas
-create table
+create table if not exists
 	rate_limits (
 		id int auto_increment primary key,
         ip varchar(45) not null,

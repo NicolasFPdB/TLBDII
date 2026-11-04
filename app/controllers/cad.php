@@ -3,11 +3,14 @@ declare(strict_types=1);
 if (session_status() !== PHP_SESSION_ACTIVE)
     session_start();
 header('Content-Type: application/json; charset=utf-8');
-require_once __DIR__ . '/../config/conection.php';
+require_once __DIR__ . '/../config/config.php';
+
+$pdo = db();
 require_once __DIR__ . '/process.php';
 
 // Declaração - Variáveis
 $name = trim($_POST['name'] ?? "");
+$sobrenome = trim($_POST['sobrenome'] ?? '');
 $emailCheck = $_POST["email"] ?? "";
 $email = filter_var($emailCheck, FILTER_VALIDATE_EMAIL);
 $password = $_POST['password'] ?? "";
@@ -34,20 +37,25 @@ $status = [
 
 try {
     // CÓDIGO DO FORMULÁRIO DE CADASTRO
-    $message['general'] = "Requisição forms cadastro efetuada com sucesso!";
-    $status['general'] = "ok";
+    respond([
+        'status' => 'ok',
+        'message' => 'Formulário de cadastro recebido com sucesso.'
+    ], 200);
 
     // Proteção - Automatizada de criação de contas
     if (!RateLimitDb($pdo, $userIp, 'cadastro', 10, 600)) {
-        $message['check'] = "Muitas tentativas de cadastro. Aguarde alguns minutos.";
-        $status['check'] = "error";
+        respond([
+            'status' => 'error',
+            'message' => 'Muitas tentativas de cadastro. Aguarde alguns minutos.'
+        ], 429);
     }
 
     if (!$email) {
-        $message['email'] = "E-mail inválido";
-        $status['email'] = "error";
-        $message['check'] = "Cadastro inválido";
-        $status['check'] = "error";
+        respond([
+            'status' => 'error',
+            'message' => 'E-mail inválido.'
+        ], 422);
+        exit;
     }
 
     // Select SQL - Check do User
@@ -57,46 +65,88 @@ try {
     $user = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$user) {
+
+        if ($name === '' || $sobrenome === '') {
+            respond([
+                'status' => 'error',
+                'message' => 'Informe nome e sobrenome.'
+            ], 422);
+        }
         // Sanitização de dados - Nome do User
         $aux = array_values(array_filter(explode(" ", $name)));
         if (!empty($aux)) {
             $name = (count($aux) > 1) ? $aux[0] . " " . end($aux) : $aux[0];
-            $message['name'] = "Nome cadastrado com sucesso!";
-            $status['name'] = "ok";
+            respond([
+                'status' => 'ok',
+                'message' => 'Nome cadastrado com sucesso.'
+            ], 200);
         } else {
-            $message['name'] = "Erro ao cadastrar user!";
-            $status['name'] = "error";
+            respond([
+                'status' => 'error',
+                'message' => 'Informe um nome válido.'
+            ], 422);
+        }
+
+
+        if (!$email) {
+            respond([
+                'status' => 'error',
+                'message' => 'Informe um e-mail válido.'
+            ], 422);
+        }
+
+        if (strlen($password) < 8) {
+            respond([
+                'status' => 'error',
+                'message' => 'A senha deve possuir pelo menos 8 caracteres.'
+            ], 422);
         }
 
         // Sanitização de dados - Senha do user
         if (strlen($password) < 6) {
-            $message['password'] = "Senha deve conter no mínimo 6 caracteres";
-            $status['password'] = "error";
+            respond([
+                'status' => 'error',
+                'message' => 'A senha deve possuir pelo menos 6 caracteres.'
+            ], 422);
         } else {
-            $message['password'] = "Senha cadastrada com sucesso!";
-            $status['password'] = "ok";
+            respond([
+                'status' => 'ok',
+                'message' => 'Senha cadastrada com sucesso.'
+            ], 200);
         }
 
         // Sanitização de dados - CEP do user
         if (!empty($cep) && preg_match('/^\d{5}-?\d{3}$/', $cep)) {
-            $message['cep'] = "CEP cadastrado com sucesso!";
-            $status['cep'] = "ok";
+            respond([
+                'status' => 'ok',
+                'message' => 'CEP cadastrado com sucesso.'
+            ], 200);
         } else {
-            $message['cep'] = "CEP inválido!";
-            $status['cep'] = "error";
+            respond([
+                'status' => 'error',
+                'message' => 'CEP inválido!'
+            ], 422);
         }
 
         if ($status['name'] === "ok" && $status['password'] === "ok" && $status['cep'] === "ok") {
-            $passwordHash = password_hash("LRC_Admin01", PASSWORD_DEFAULT);
+            $passwordHash = password_hash(
+                $password,
+                PASSWORD_DEFAULT
+            );
 
             // Insert SQL - Cadastro do Usuário na database
-            $sql = "INSERT INTO users (nome, email, senha, cep) VALUES (:nome, :email, :senha, :cep);";
+            $sql = "INSERT INTO users
+        (nome, sobrenome, email, senha, tipo)
+        VALUES
+        (:nome, :sobrenome, :email, :senha, 'cliente')";
+
             $stmt = $pdo->prepare($sql);
+
             $stmt->execute([
                 ':nome' => $name,
+                ':sobrenome' => $sobrenome,
                 ':email' => $email,
-                ':senha' => $passwordHash,
-                ':cep' => $cep
+                ':senha' => $passwordHash
             ]);
 
             $message['email'] = "E-mail cadastrado com sucesso!";
@@ -113,9 +163,21 @@ try {
         $status['check'] = "error";
     }
 
-} catch (PDOException $e) {
-    $message['general'] = "Falha nas requisições!";
-    $status['general'] = "error";
+
+} catch (Throwable $e) {
+
+    error_log(
+        'Erro no cadastro: ' . $e->getMessage()
+    );
+
+    http_response_code(500);
+
+    echo json_encode([
+        'status' => 'error',
+        'message' => 'Não foi possível realizar o cadastro.'
+    ]);
+
+    exit;
 }
 
 // Output JSON

@@ -3,8 +3,12 @@ declare(strict_types=1);
 if (session_status() !== PHP_SESSION_ACTIVE)
     session_start();
 header('Content-Type: application/json; charset=utf-8');
-require_once __DIR__ . '/../config/conection.php';
+
+require_once __DIR__ . '/../config/config.php';
+
+$pdo = db();
 require_once __DIR__ . '/process.php';
+require_once __DIR__ . '/../services/mail.php';
 
 // Declaração - Variáveis
 $name = trim($_POST['name'] ?? "");

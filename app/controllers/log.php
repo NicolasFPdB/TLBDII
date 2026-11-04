@@ -3,7 +3,9 @@ declare(strict_types=1);
 if (session_status() !== PHP_SESSION_ACTIVE)
     session_start();
 header('Content-Type: application/json; charset=utf-8');
-require_once __DIR__ . '/../config/conection.php';
+require_once __DIR__ . '/../config/config.php';
+
+$pdo = db();
 require_once __DIR__ . '/process.php';
 
 
@@ -39,8 +41,15 @@ try {
 
     // Proteção - Brute Force
     if (!RateLimitDb($pdo, $userIp, 'login', 5, 300)) {
-        $message['check'] = "Muitas tentativas de login. Aguarde 5 minutos e tente novamente.";
-        $status['check'] = "error";
+
+        http_response_code(429);
+
+        echo json_encode([
+            'status' => 'error',
+            'message' => 'Muitas tentativas. Aguarde alguns minutos.'
+        ]);
+
+        exit;
     }
 
     if ($email && !empty($password)) {
@@ -48,7 +57,7 @@ try {
         $status['check'] = "ok";
 
         // Select SQL - Check do User
-        $sql = "SELECT id, senha, nome FROM users WHERE email = :email";
+        $sql = "SELECT id, senha, nome, tipo FROM users WHERE email = :email";
         $stmt = $pdo->prepare($sql);
         $stmt->execute([':email' => $email]);
         $user = $stmt->fetch(PDO::FETCH_ASSOC);
@@ -56,9 +65,13 @@ try {
         // Checagem do login
         if ($user && password_verify($password, $user['senha'])) {
             session_regenerate_id(true);
+
             $_SESSION['user_id'] = $user['id'];
             $_SESSION['user_name'] = $user['nome'];
+            $_SESSION['user_type'] = $user['tipo'];
             $_SESSION['logged_in'] = true;
+
+            ResetRateLimit($pdo, $userIp, 'login');
 
             $message['check'] = "Sucesso ao logar!";
             $status['check'] = "ok";

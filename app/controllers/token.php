@@ -4,11 +4,17 @@ if (session_status() !== PHP_SESSION_ACTIVE)
     session_start();
 header('Content-Type: application/json; charset=utf-8');
 
+require_once __DIR__ . '/../config/config.php';
+
+$pdo = db();
+require_once __DIR__ . '/process.php';
+
 // Declaração - Variáveis
 $name = trim($_POST['name'] ?? "");
 $emailCheck = $_POST["email"] ?? "";
 $email = filter_var($emailCheck, FILTER_VALIDATE_EMAIL);
 $password = $_POST['password'] ?? "";
+$passwordConfirm = $_POST['password-confirm'] ?? '';
 $cep = trim($_POST['cep'] ?? "");
 $token = null;
 $userIp = $_SERVER['REMOTE_ADDR'] ?? '0.0.0.0';
@@ -62,14 +68,18 @@ try {
         $userToken = $_POST['token-numbers'] ?? "";
         $now = date('Y-m-d H:i:s');
 
-        if (hash_equals($userToken, $user['token']) && $user['token_expiration'] >= $now) {
-            $message['token'] = "Token válido";
+        if (
+            hash_equals($userToken, $user['token']) &&
+            $user['token_expiration'] >= $now
+        ) {
             $status['token'] = "ok";
         } else {
-            $message['token'] = "Token inválido";
             $status['token'] = "error";
-            $message['check'] = "Token inválido";
-            $status['check'] = "error";
+        }
+
+        if ($password !== $passwordConfirm) {
+            // Retornar erro e interromper a execução.
+            exit;
         }
 
         // Sanitização de dados - Nova senha do User
@@ -77,7 +87,7 @@ try {
             $message['password'] = "Senha deve conter no mínimo 6 caracteres";
             $status['password'] = "error";
         } else {
-            $passwordHash = password_hash("LRC_Admin01", PASSWORD_DEFAULT);
+            $passwordHash = password_hash($password, PASSWORD_DEFAULT);
 
             // Update SQL
             $sql = "UPDATE users SET senha = :senha, token = NULL, token_expiration = NULL WHERE email = :email";

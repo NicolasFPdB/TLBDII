@@ -1,6 +1,7 @@
 <?php
 declare(strict_types=1);
 
+$autoload = __DIR__ . '/../../vendor/autoload.php';
 use PHPMailer\PHPMailer\PHPMailer;
 use PHPMailer\PHPMailer\Exception;
 
@@ -21,7 +22,8 @@ function TokenReset(string $destinatario, string $token): bool
         return false;
     }
     require_once $autoload;
-    if (!class_exists(PHPMailer::class)) return false;
+    if (!class_exists(PHPMailer::class))
+        return false;
 
     $mail = new PHPMailer(true);
     try {
@@ -31,7 +33,7 @@ function TokenReset(string $destinatario, string $token): bool
         $mail->Username = $username;
         $mail->Password = $password;
         $mail->SMTPSecure = PHPMailer::ENCRYPTION_STARTTLS;
-        $mail->Port = (int)(getenv('SMTP_PORT') ?: 587);
+        $mail->Port = (int) (getenv('SMTP_PORT') ?: 587);
         $mail->CharSet = 'UTF-8';
         $mail->setFrom($from, getenv('SMTP_FROM_NAME') ?: 'LRC1970 AutoPeças');
         $mail->addAddress($destinatario);

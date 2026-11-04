@@ -1,7 +1,9 @@
 <?php
 declare(strict_types=1);
 require_once __DIR__ . '/../middleware/session.php';
-require_once __DIR__ . '/../config/conection.php';
+require_once __DIR__ . '/../config/config.php';
+
+$pdo = db();
 header('Content-Type: application/json; charset=utf-8');
 
 $userId = (int) $_SESSION['user_id'];
@@ -32,7 +34,8 @@ try {
             respond(['status' => 'ok', 'user' => $user]);
 
         case 'update_info':
-            $nome = trim((string) ($_POST['nome'] ?? ''));
+            $nome = trim($_POST['nome'] ?? '');
+            $descricao = trim($_POST['descricao'] ?? '');
             $sobrenome = trim((string) ($_POST['sobrenome'] ?? ''));
             $email = filter_var(trim((string) ($_POST['email'] ?? '')), FILTER_VALIDATE_EMAIL);
             $telefone = trim((string) ($_POST['telefone'] ?? ''));
@@ -42,7 +45,15 @@ try {
             $check->execute([':email' => $email, ':id' => $userId]);
             if ($check->fetch())
                 respond(['status' => 'error', 'message' => 'Este e-mail já está em uso.'], 409);
-            $stmt = $pdo->prepare('UPDATE users SET nome=:nome, sobrenome=:sobrenome, email=:email, telefone=:telefone WHERE id=:id');
+            $stmt = $pdo->prepare(
+                'UPDATE produtos
+     SET codigo = :codigo,
+         nome = :nome,
+         descricao = :descricao,
+         preco = :preco,
+         estoque = :estoque
+     WHERE id_produto = :id'
+            );
             $stmt->execute([':nome' => $nome, ':sobrenome' => $sobrenome, ':email' => $email, ':telefone' => $telefone, ':id' => $userId]);
             respond(['status' => 'ok', 'message' => 'Dados atualizados com sucesso!']);
 
@@ -88,7 +99,12 @@ try {
             $items = json_decode((string) file_get_contents($jsonPath), true);
             if (!is_array($items))
                 respond(['status' => 'error', 'message' => 'Arquivo de produtos inválido.'], 422);
-            $stmt = $pdo->prepare('INSERT INTO produtos (codigo, nome, descricao, preco, estoque) VALUES (:codigo,:nome,:descricao,:preco,:estoque) ON DUPLICATE KEY UPDATE nome=VALUES(nome), descricao=VALUES(descricao)');
+            $stmt = $pdo->prepare(
+                'INSERT INTO produtos
+     (codigo, nome, descricao, preco, estoque)
+     VALUES
+     (:codigo, :nome, :descricao, :preco, :estoque)'
+            );
             $count = 0;
             foreach ($items as $item) {
                 $rawCodes = $item['Código'] ?? [];
@@ -111,6 +127,27 @@ try {
             $nome = trim((string) ($_POST['descricao'] ?? ''));
             $preco = filter_var($_POST['preco'] ?? null, FILTER_VALIDATE_FLOAT);
             $estoque = filter_var($_POST['estoque'] ?? null, FILTER_VALIDATE_INT);
+
+            if (
+                $preco === false ||
+                !is_finite((float) $preco) ||
+                $preco < 0
+            ) {
+                respond([
+                    'status' => 'error',
+                    'message' => 'Preço inválido.'
+                ], 422);
+            }
+
+            if (
+                $estoque === false ||
+                $estoque < 0
+            ) {
+                respond([
+                    'status' => 'error',
+                    'message' => 'Estoque inválido.'
+                ], 422);
+            }
             if ($codigo === '' || strlen($codigo) > 30 || $nome === '' || $preco === false || $preco < 0 || $estoque === false || $estoque < 0)
                 respond(['status' => 'error', 'message' => 'Informe código, descrição, preço e estoque válidos.'], 422);
             if ($id > 0) {
@@ -121,6 +158,60 @@ try {
                 $stmt->execute([':codigo' => $codigo, ':nome' => $nome, ':preco' => $preco, ':estoque' => $estoque]);
             }
             respond(['status' => 'ok', 'message' => 'Produto salvo com sucesso!']);
+
+        case 'change_password':
+
+            $currentPassword = $_POST['current_password'] ?? '';
+            $newPassword = $_POST['new_password'] ?? '';
+            $confirmPassword = $_POST['confirm_password'] ?? '';
+
+            if (
+                $currentPassword === '' ||
+                strlen($newPassword) < 8 ||
+                $newPassword !== $confirmPassword
+            ) {
+                respond([
+                    'status' => 'error',
+                    'message' => 'Verifique os campos da nova senha.'
+                ], 422);
+            }
+
+            $stmt = $pdo->prepare(
+                'SELECT senha FROM users WHERE id = :id'
+            );
+
+            $stmt->execute([':id' => $userId]);
+
+            $user = $stmt->fetch();
+
+            if (
+                !$user ||
+                !password_verify($currentPassword, $user['senha'])
+            ) {
+                respond([
+                    'status' => 'error',
+                    'message' => 'Senha atual incorreta.'
+                ], 403);
+            }
+
+            $hash = password_hash(
+                $newPassword,
+                PASSWORD_DEFAULT
+            );
+
+            $stmt = $pdo->prepare(
+                'UPDATE users SET senha = :senha WHERE id = :id'
+            );
+
+            $stmt->execute([
+                ':senha' => $hash,
+                ':id' => $userId
+            ]);
+
+            respond([
+                'status' => 'ok',
+                'message' => 'Senha alterada com sucesso!'
+            ]);
 
         default:
             respond(['status' => 'error', 'message' => 'Ação inválida.'], 400);
