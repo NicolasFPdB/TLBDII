@@ -1,40 +1,37 @@
 <?php
+declare(strict_types=1);
+
+/**
+ * Limita tentativas usando a coluna `acao` existente no schema.
+ * Em caso de erro, falha fechado: não libera a operação.
+ */
 function RateLimitDb(PDO $pdo, string $ip, string $action, int $maxAttempts = 5, int $seconds = 300): bool
 {
     try {
         $now = date('Y-m-d H:i:s');
-
-        $sql = "SELECT id, attempts, last_attempt FROM rate_limits WHERE ip = :ip AND action = :action";
-        $stmt = $pdo->prepare($sql);
-        $stmt->execute([':ip' => $ip, ':action' => $action]);
+        $stmt = $pdo->prepare('SELECT id, attempts, last_attempt FROM rate_limits WHERE ip = :ip AND acao = :acao');
+        $stmt->execute([':ip' => $ip, ':acao' => $action]);
         $record = $stmt->fetch(PDO::FETCH_ASSOC);
 
         if ($record) {
-            $timePassed = time() - strtotime($record['last_attempt']);
-
-            if ($timePassed > $seconds) {
-                $updateSql = "UPDATE rate_limits SET attempts = 1, last_attempt = :now WHERE id = :id";
-                $updateStmt = $pdo->prepare($updateSql);
-                $updateStmt->execute([':now' => $now, ':id' => $record['id']]);
+            if (time() - strtotime($record['last_attempt']) > $seconds) {
+                $update = $pdo->prepare('UPDATE rate_limits SET attempts = 1, last_attempt = :now WHERE id = :id');
+                $update->execute([':now' => $now, ':id' => $record['id']]);
                 return true;
             }
-
-            if ($record['attempts'] < $maxAttempts) {
-                $updateSql = "UPDATE rate_limits SET attempts = attempts + 1, last_attempt = :now WHERE id = :id";
-                $updateStmt = $pdo->prepare($updateSql);
-                $updateStmt->execute([':now' => $now, ':id' => $record['id']]);
-                return true;
+            if ((int)$record['attempts'] >= $maxAttempts) {
+                return false;
             }
-
-            return false;
-        } else {
-            $insertSql = "INSERT INTO rate_limits (ip, action, attempts, last_attempt) VALUES (:ip, :action, 1, :now)";
-            $insertStmt = $pdo->prepare($insertSql);
-            $insertStmt->execute([':ip' => $ip, ':action' => $action, ':now' => $now]);
+            $update = $pdo->prepare('UPDATE rate_limits SET attempts = attempts + 1, last_attempt = :now WHERE id = :id');
+            $update->execute([':now' => $now, ':id' => $record['id']]);
             return true;
         }
-    } catch (Throwable $e) {
+
+        $insert = $pdo->prepare('INSERT INTO rate_limits (ip, acao, attempts, last_attempt) VALUES (:ip, :acao, 1, :now)');
+        $insert->execute([':ip' => $ip, ':acao' => $action, ':now' => $now]);
         return true;
+    } catch (Throwable $e) {
+        error_log('Rate limit indisponível: ' . $e->getMessage());
+        return false;
     }
 }
-?>

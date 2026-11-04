@@ -1,93 +1,123 @@
 <?php
-// Middleware de Sessão e JSON
-    require_once __DIR__ . '/../middleware/session.php';
-// Conexão com a Database
-    include_once('conection.php');
+declare(strict_types=1);
+require_once __DIR__ . '/../middleware/session.php';
+require_once __DIR__ . '/../config/conection.php';
+header('Content-Type: application/json; charset=utf-8');
 
-$userId = $_SESSION['user_id'] ?? 1; // ID fallback para testes
+$userId = (int)$_SESSION['user_id'];
 $action = $_GET['action'] ?? $_POST['action'] ?? '';
+$isAdmin = ($_SESSION['user_type'] ?? '') === 'administrador';
+
+function respond(array $data, int $code = 200): never {
+    http_response_code($code);
+    echo json_encode($data, JSON_UNESCAPED_UNICODE);
+    exit;
+}
+function requireAdmin(bool $isAdmin): void {
+    if (!$isAdmin) respond(['status' => 'error', 'message' => 'Acesso restrito a administradores.'], 403);
+}
 
 try {
     switch ($action) {
-        // Retorna dados do perfil do usuário logado
         case 'get_profile':
-            $stmt = $pdo->prepare("SELECT id, nome, email, telefone, tipo FROM users WHERE id = :id");
+            $stmt = $pdo->prepare('SELECT id, nome, sobrenome, email, telefone, tipo FROM users WHERE id = :id');
             $stmt->execute([':id' => $userId]);
-            $user = $stmt->fetch(PDO::FETCH_ASSOC);
+            $user = $stmt->fetch();
+            if (!$user) respond(['status' => 'error', 'message' => 'Usuário não encontrado.'], 404);
+            $user['nome_completo'] = trim($user['nome'] . ' ' . $user['sobrenome']);
+            respond(['status' => 'ok', 'user' => $user]);
 
-            if (!$user) {
-                // Mock de teste se banco estiver vazio
-                $user = [
-                    'id' => $userId,
-                    'nome' => $_SESSION['user_name'] ?? 'Administrador',
-                    'email' => 'admin@lrc1970.com',
-                    'telefone' => '(11) 99159-9709',
-                    'tipo' => 'administrador'
-                ];
-            }
-
-            echo json_encode(['status' => 'ok', 'user' => $user], JSON_UNESCAPED_UNICODE);
-            break;
-
-        // Atualizar Informações Pessoais
         case 'update_info':
-            $nome = trim($_POST['nome'] ?? '');
-            $sobrenome = trim($_POST['sobrenome'] ?? '');
-            $email = trim($_POST['email'] ?? '');
-            $telefone = trim($_POST['telefone'] ?? '');
-            $nomeCompleto = trim($nome . ' ' . $sobrenome);
+            $nome = trim((string)($_POST['nome'] ?? ''));
+            $sobrenome = trim((string)($_POST['sobrenome'] ?? ''));
+            $email = filter_var(trim((string)($_POST['email'] ?? '')), FILTER_VALIDATE_EMAIL);
+            $telefone = trim((string)($_POST['telefone'] ?? ''));
+            if ($nome === '' || $sobrenome === '' || !$email) respond(['status'=>'error','message'=>'Nome, sobrenome e e-mail válido são obrigatórios.'], 422);
+            $check = $pdo->prepare('SELECT id FROM users WHERE email = :email AND id <> :id');
+            $check->execute([':email'=>$email, ':id'=>$userId]);
+            if ($check->fetch()) respond(['status'=>'error','message'=>'Este e-mail já está em uso.'], 409);
+            $stmt = $pdo->prepare('UPDATE users SET nome=:nome, sobrenome=:sobrenome, email=:email, telefone=:telefone WHERE id=:id');
+            $stmt->execute([':nome'=>$nome, ':sobrenome'=>$sobrenome, ':email'=>$email, ':telefone'=>$telefone, ':id'=>$userId]);
+            respond(['status'=>'ok','message'=>'Dados atualizados com sucesso!']);
 
-            $stmt = $pdo->prepare("UPDATE users SET nome = :nome, email = :email, telefone = :telefone WHERE id = :id");
-            $stmt->execute([
-                ':nome' => $nomeCompleto,
-                ':email' => $email,
-                ':telefone' => $telefone,
-                ':id' => $userId
-            ]);
+        case 'get_addresses':
+            $stmt = $pdo->prepare('SELECT e.id_endereco, e.cep, e.numero, e.complemento, c.logradouro, c.bairro, c.cidade, c.estado FROM enderecos e JOIN ceps c ON c.cep=e.cep WHERE e.id_usuario=:id ORDER BY e.id_endereco DESC');
+            $stmt->execute([':id'=>$userId]);
+            respond(['status'=>'ok','addresses'=>$stmt->fetchAll()]);
 
-            echo json_encode(['status' => 'ok', 'message' => 'Dados atualizados com sucesso!'], JSON_UNESCAPED_UNICODE);
-            break;
-
-        // Listar produtos (Lê da base de dados ou faz fallback para data.json)
-        case 'list_products':
-            $stmt = $pdo->query("SELECT id_produto as id, codigo, nome, preco, estoque FROM produtos LIMIT 50");
-            $products = $stmt ? $stmt->fetchAll(PDO::FETCH_ASSOC) : [];
-
-            if (empty($products)) {
-                $jsonPath = __DIR__ . '/../../public/assets/data/data.json';
-                if (file_exists($jsonPath)) {
-                    $jsonData = file_get_contents($jsonPath);
-                    $products = array_slice(json_decode($jsonData, true), 0, 15);
-                }
+        case 'save_address':
+            $cep = preg_replace('/\D/', '', (string)($_POST['cep'] ?? ''));
+            $logradouro = trim((string)($_POST['logradouro'] ?? ''));
+            $numero = trim((string)($_POST['numero'] ?? ''));
+            $complemento = trim((string)($_POST['complemento'] ?? ''));
+            $bairro = trim((string)($_POST['bairro'] ?? ''));
+            $cidade = trim((string)($_POST['cidade'] ?? ''));
+            $estado = strtoupper(trim((string)($_POST['estado'] ?? '')));
+            if (!preg_match('/^\d{8}$/', $cep) || !$logradouro || !$numero || !$bairro || !$cidade || !preg_match('/^[A-Z]{2}$/', $estado)) {
+                respond(['status'=>'error','message'=>'Preencha todos os campos do endereço corretamente.'], 422);
             }
-
-            echo json_encode(['status' => 'ok', 'products' => $products], JSON_UNESCAPED_UNICODE);
-            break;
-
-        // Sincronizar arquivo JSON com o banco de dados
-        case 'sync_json':
-            $jsonPath = __DIR__ . '/../../public/assets/data/data.json';
-            if (file_exists($jsonPath)) {
-                $jsonData = file_get_contents($jsonPath);
-                $items = json_decode($jsonData, true);
-
-                $stmt = $pdo->prepare("INSERT INTO produtos (codigo, nome, preco, estoque) VALUES (:codigo, :nome, 45.90, 10) ON DUPLICATE KEY UPDATE nome = VALUES(nome)");
-                foreach ($items as $item) {
-                    $stmt->execute([
-                        ':codigo' => $item['Código'] ?? '000',
-                        ':nome' => $item['Descrição do Produto'] ?? 'Sem Descrição'
-                    ]);
-                }
-                echo json_encode(['status' => 'ok', 'message' => 'Banco de dados sincronizado com sucesso a partir do data.json!'], JSON_UNESCAPED_UNICODE);
+            $pdo->beginTransaction();
+            $cepStmt = $pdo->prepare('INSERT INTO ceps (cep, logradouro, bairro, cidade, estado) VALUES (:cep,:logradouro,:bairro,:cidade,:estado) ON DUPLICATE KEY UPDATE logradouro=VALUES(logradouro), bairro=VALUES(bairro), cidade=VALUES(cidade), estado=VALUES(estado)');
+            $cepStmt->execute([':cep'=>$cep, ':logradouro'=>$logradouro, ':bairro'=>$bairro, ':cidade'=>$cidade, ':estado'=>$estado]);
+            $existing = $pdo->prepare('SELECT id_endereco FROM enderecos WHERE id_usuario=:id AND cep=:cep AND numero=:numero LIMIT 1');
+            $existing->execute([':id'=>$userId, ':cep'=>$cep, ':numero'=>$numero]);
+            if ($existing->fetch()) {
+                $upd = $pdo->prepare('UPDATE enderecos SET complemento=:complemento WHERE id_usuario=:id AND cep=:cep AND numero=:numero');
+                $upd->execute([':complemento'=>$complemento, ':id'=>$userId, ':cep'=>$cep, ':numero'=>$numero]);
             } else {
-                echo json_encode(['status' => 'error', 'message' => 'Arquivo data.json não encontrado.'], JSON_UNESCAPED_UNICODE);
+                $ins = $pdo->prepare('INSERT INTO enderecos (id_usuario, cep, numero, complemento) VALUES (:id,:cep,:numero,:complemento)');
+                $ins->execute([':id'=>$userId, ':cep'=>$cep, ':numero'=>$numero, ':complemento'=>$complemento]);
             }
-            break;
+            $pdo->commit();
+            respond(['status'=>'ok','message'=>'Endereço salvo com sucesso!']);
+
+        case 'list_products':
+            requireAdmin($isAdmin);
+            $stmt = $pdo->query('SELECT id_produto AS id, codigo, nome, descricao, preco, estoque FROM produtos ORDER BY id_produto DESC LIMIT 100');
+            respond(['status'=>'ok','products'=>$stmt->fetchAll()]);
+
+        case 'sync_json':
+            requireAdmin($isAdmin);
+            $jsonPath = __DIR__ . '/../../public/assets/data/data.json';
+            $items = json_decode((string)file_get_contents($jsonPath), true);
+            if (!is_array($items)) respond(['status'=>'error','message'=>'Arquivo de produtos inválido.'], 422);
+            $stmt = $pdo->prepare('INSERT INTO produtos (codigo, nome, descricao, preco, estoque) VALUES (:codigo,:nome,:descricao,:preco,:estoque) ON DUPLICATE KEY UPDATE nome=VALUES(nome), descricao=VALUES(descricao)');
+            $count = 0;
+            foreach ($items as $item) {
+                $rawCodes = $item['Código'] ?? [];
+                $codes = is_array($rawCodes) ? $rawCodes : [$rawCodes];
+                $name = trim((string)($item['Descrição do Produto'] ?? 'Produto sem descrição'));
+                foreach ($codes as $rawCode) {
+                    $code = trim((string)$rawCode);
+                    if ($code === '' || strlen($code) > 30) continue;
+                    $stmt->execute([':codigo'=>$code, ':nome'=>substr($name,0,150), ':descricao'=>$name, ':preco'=>0, ':estoque'=>0]);
+                    $count++;
+                }
+            }
+            respond(['status'=>'ok','message'=>"Sincronização concluída: {$count} códigos processados. Preço e estoque permanecem zerados até serem informados no cadastro do produto."]);
+
+        case 'save_product':
+            requireAdmin($isAdmin);
+            $id = (int)($_POST['id'] ?? 0);
+            $codigo = trim((string)($_POST['codigo'] ?? ''));
+            $nome = trim((string)($_POST['descricao'] ?? ''));
+            $preco = filter_var($_POST['preco'] ?? null, FILTER_VALIDATE_FLOAT);
+            $estoque = filter_var($_POST['estoque'] ?? null, FILTER_VALIDATE_INT);
+            if ($codigo === '' || strlen($codigo)>30 || $nome === '' || $preco === false || $preco < 0 || $estoque === false || $estoque < 0) respond(['status'=>'error','message'=>'Informe código, descrição, preço e estoque válidos.'], 422);
+            if ($id > 0) {
+                $stmt=$pdo->prepare('UPDATE produtos SET codigo=:codigo,nome=:nome,preco=:preco,estoque=:estoque WHERE id_produto=:id');
+                $stmt->execute([':codigo'=>$codigo,':nome'=>$nome,':preco'=>$preco,':estoque'=>$estoque,':id'=>$id]);
+            } else {
+                $stmt=$pdo->prepare('INSERT INTO produtos (codigo,nome,preco,estoque) VALUES (:codigo,:nome,:preco,:estoque)');
+                $stmt->execute([':codigo'=>$codigo,':nome'=>$nome,':preco'=>$preco,':estoque'=>$estoque]);
+            }
+            respond(['status'=>'ok','message'=>'Produto salvo com sucesso!']);
 
         default:
-            echo json_encode(['status' => 'error', 'message' => 'Ação inválida.'], JSON_UNESCAPED_UNICODE);
+            respond(['status'=>'error','message'=>'Ação inválida.'], 400);
     }
-} catch (Exception $e) {
-    echo json_encode(['status' => 'error', 'message' => $e->getMessage()], JSON_UNESCAPED_UNICODE);
+} catch (Throwable $e) {
+    if ($pdo->inTransaction()) $pdo->rollBack();
+    error_log('Controller usuario: ' . $e->getMessage());
+    respond(['status'=>'error','message'=>'Não foi possível concluir a operação. Verifique os dados e tente novamente.'], 500);
 }
-?>
