@@ -29,13 +29,3 @@ function db(): PDO
     ]);
     return $connection;
 }
-
-function e(mixed $value): string
-{
-    return htmlspecialchars((string) $value, ENT_QUOTES | ENT_SUBSTITUTE, 'UTF-8');
-}
-
-function brl(mixed $value): string
-{
-    return 'R$ ' . number_format((float) $value, 2, ',', '.');
-}

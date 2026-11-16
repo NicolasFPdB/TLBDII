@@ -158,3 +158,5 @@ create table if not exists
         last_attempt datetime not null,
         unique key ip_acao (ip, acao)
 	);
+
+Select * from users;
