@@ -167,7 +167,7 @@ class Carrinho {
                 <ul class="summary-lines">
                     <li><span>Itens (${totalItens})</span><span>Preço sob consulta</span></li>
                     <li><span>Frete</span><span>A calcular</span></li>
-                    <li class="summary-total"><span>Total</span><span>Indisponível até validar preços</span></li>
+                    <li class="summary-total"><span> </span><span>Total Indisponível até validar preços</span></li>
                 </ul>
 
                 <button type="button" class="btn-buy btn-checkout" disabled title="O checkout será habilitado após integração de preços, estoque e pedidos no servidor">Finalizar Compra</button>
